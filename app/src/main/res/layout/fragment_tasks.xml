@@ -1,0 +1,428 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.pierrejacquier.olim.fragments.TasksFragment">
+
+    <!-- TasksList -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    
+        <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="@dimen/container_margin"
+        android:layout_marginLeft="@dimen/container_margin"
+        android:layout_marginBottom="@dimen/container_margin"
+        android:orientation="vertical">
+
+        <!-- Tasks -->
+        <LinearLayout
+            android:id="@+id/overdueTasksLayout"
+            android:layout_width="match_parent"
+            android:layout_marginTop="@dimen/container_margin"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/container_margin"
+                android:layout_marginRight="@dimen/container_margin"
+                android:layout_marginBottom="10dp">
+
+                <com.devspark.robototextview.widget.RobotoTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/overdue"
+                    android:textColor="@color/colorSecondaryText"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:orientation="horizontal"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:contentDescription="@string/postpone_all"
+                        android:src="@drawable/ic_timelapse"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="@dimen/container_margin"
+                        android:id="@+id/postponeAllOverdueTasks" />
+
+                    <ImageView
+                        android:contentDescription="@string/done_all"
+                        android:src="@drawable/ic_done_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/makeAsDoneAllOverdueTasks" />
+
+                </LinearLayout>
+
+            </RelativeLayout>
+            <android.support.v7.widget.CardView
+                android:id="@+id/overdueTasksCard"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="0dp"
+                card_view:cardBackgroundColor="@color/cardsbg"
+                card_view:cardCornerRadius="@dimen/card_corner_radius"
+                card_view:cardElevation="@dimen/cards_elevation">
+
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/overdueTasksRecyclerView"
+                    android:scrollbars="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </android.support.v7.widget.CardView>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/todayTasksLayout"
+            android:layout_width="match_parent"
+            android:layout_marginTop="@dimen/container_margin"
+            android:layout_marginBottom="@dimen/container_margin"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/container_margin"
+                android:layout_marginRight="@dimen/container_margin"
+                android:layout_marginBottom="10dp">
+
+                <com.devspark.robototextview.widget.RobotoTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/today"
+                    android:textColor="@color/colorSecondaryText"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:orientation="horizontal"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:contentDescription="@string/postpone_all"
+                        android:src="@drawable/ic_timelapse"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="@dimen/container_margin"
+                        android:id="@+id/postponeAllTodayTasks" />
+
+                    <ImageView
+                        android:contentDescription="@string/done_all"
+                        android:src="@drawable/ic_done_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/makeAsDoneAllTodayTasks" />
+
+                </LinearLayout>
+
+            </RelativeLayout>
+            <android.support.v7.widget.CardView
+                android:id="@+id/todayTasksCard"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                card_view:cardBackgroundColor="@color/cardsbg"
+                card_view:cardCornerRadius="@dimen/card_corner_radius"
+                card_view:cardElevation="@dimen/cards_elevation">
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/todayTasksRecyclerView"
+                    android:scrollbars="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </android.support.v7.widget.CardView>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/tomorrowTasksLayout"
+            android:layout_width="match_parent"
+            android:layout_marginTop="@dimen/container_margin"
+            android:layout_marginBottom="@dimen/container_margin"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/container_margin"
+                android:layout_marginRight="@dimen/container_margin"
+                android:layout_marginBottom="10dp">
+
+                <com.devspark.robototextview.widget.RobotoTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tomorrow"
+                    android:textColor="@color/colorSecondaryText"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:orientation="horizontal"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:contentDescription="@string/postpone_all"
+                        android:src="@drawable/ic_timelapse"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="@dimen/container_margin"
+                        android:layout_marginEnd="@dimen/container_margin"
+                        android:id="@+id/postponeAllTomorrowTasks" />
+
+                    <ImageView
+                        android:contentDescription="@string/done_all"
+                        android:src="@drawable/ic_done_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/makeAsDoneAllTomorrowTasks" />
+
+                </LinearLayout>
+
+            </RelativeLayout>
+            <android.support.v7.widget.CardView
+                android:id="@+id/tomorrowTasksCard"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="0dp"
+                card_view:cardBackgroundColor="@color/cardsbg"
+                card_view:cardCornerRadius="@dimen/card_corner_radius"
+                card_view:cardElevation="@dimen/cards_elevation">
+
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/tomorrowTasksRecyclerView"
+                    android:scrollbars="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </android.support.v7.widget.CardView>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/inTheNextSevenDaysTasksLayout"
+            android:layout_width="match_parent"
+            android:layout_marginTop="@dimen/container_margin"
+            android:layout_marginBottom="@dimen/container_margin"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/container_margin"
+                android:layout_marginRight="@dimen/container_margin"
+                android:layout_marginBottom="10dp">
+
+                <com.devspark.robototextview.widget.RobotoTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/inTheNextSevenDays"
+                    android:textColor="@color/colorSecondaryText"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:orientation="horizontal"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:contentDescription="@string/postpone_all"
+                        android:src="@drawable/ic_timelapse"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="@dimen/container_margin"
+                        android:layout_marginEnd="@dimen/container_margin"
+                        android:id="@+id/postponeAllInTheNextSevenDaysTasks" />
+
+                    <ImageView
+                        android:contentDescription="@string/done_all"
+                        android:src="@drawable/ic_done_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/makeAsDoneAllInTheNextSevenDaysTasks" />
+
+                </LinearLayout>
+
+            </RelativeLayout>
+            <android.support.v7.widget.CardView
+                android:id="@+id/inTheNextSevenDaysTasksCard"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="0dp"
+                card_view:cardBackgroundColor="@color/cardsbg"
+                card_view:cardCornerRadius="@dimen/card_corner_radius"
+                card_view:cardElevation="@dimen/cards_elevation">
+
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/inTheNextSevenDaysTasksRecyclerView"
+                    android:scrollbars="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </android.support.v7.widget.CardView>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/laterTasksLayout"
+            android:layout_width="match_parent"
+            android:layout_marginTop="@dimen/container_margin"
+            android:layout_marginBottom="@dimen/container_margin"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/container_margin"
+                android:layout_marginRight="@dimen/container_margin"
+                android:layout_marginBottom="10dp">
+
+                <com.devspark.robototextview.widget.RobotoTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/later"
+                    android:textColor="@color/colorSecondaryText"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:orientation="horizontal"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:contentDescription="@string/postpone_all"
+                        android:src="@drawable/ic_timelapse"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="@dimen/container_margin"
+                        android:layout_marginEnd="@dimen/container_margin"
+                        android:id="@+id/postponeAllLaterTasks" />
+
+                    <ImageView
+                        android:contentDescription="@string/done_all"
+                        android:src="@drawable/ic_done_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/makeAsDoneAllLaterTasks" />
+
+                </LinearLayout>
+
+            </RelativeLayout>
+            <android.support.v7.widget.CardView
+                android:id="@+id/laterTasksCard"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="0dp"
+                card_view:cardBackgroundColor="@color/cardsbg"
+                card_view:cardCornerRadius="@dimen/card_corner_radius"
+                card_view:cardElevation="@dimen/cards_elevation">
+
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/laterTasksRecyclerView"
+                    android:scrollbars="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </android.support.v7.widget.CardView>
+        </LinearLayout>
+
+        <!-- No-task message -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:id="@+id/noTasksLayout"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <ImageView
+                android:layout_width="130dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="120dp"
+                android:src="@drawable/ic_videogame_asset"/>
+            <com.devspark.robototextview.widget.RobotoTextView
+                android:layout_width="wrap_content"
+                android:textColor="@color/colorSecondaryText"
+                app:fontFamily="roboto"
+                app:textWeight="light"
+                android:textSize="30sp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/nothing_to_do"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    </ScrollView>
+
+    <!-- TaskAdder -->
+    <android.support.v7.widget.CardView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        card_view:cardBackgroundColor="@color/cardsbg"
+        card_view:cardCornerRadius="0dp"
+        android:layout_alignParentBottom="true"
+        card_view:cardElevation="8dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:padding="@dimen/container_margin"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/taskAdderSendButton"
+                android:layout_width="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:tint="@color/colorAccent"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="@dimen/container_margin"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_menu_send"/>
+
+            <com.rengwuxian.materialedittext.MaterialEditText
+                android:id="@+id/taskAdderInput"
+                android:layout_width="fill_parent"
+                android:layout_toLeftOf="@id/taskAdderSendButton"
+                android:layout_toStartOf="@id/taskAdderSendButton"
+                android:layout_height="45dp"
+                android:hint="@string/add_a_new_task"/>
+        </RelativeLayout>
+
+    </android.support.v7.widget.CardView>
+
+</RelativeLayout>
