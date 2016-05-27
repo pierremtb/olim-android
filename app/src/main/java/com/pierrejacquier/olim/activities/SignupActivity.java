@@ -2,6 +2,7 @@ package com.pierrejacquier.olim.activities;
 
 import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -18,6 +19,8 @@ import butterknife.InjectView;
 import im.delight.android.ddp.Meteor;
 import im.delight.android.ddp.MeteorCallback;
 import im.delight.android.ddp.ResultListener;
+
+import com.mikepenz.iconics.context.IconicsLayoutInflater;
 import com.pierrejacquier.olim.R;
 
 public class SignupActivity extends AppCompatActivity implements MeteorCallback {

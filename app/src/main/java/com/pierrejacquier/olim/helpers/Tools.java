@@ -59,6 +59,10 @@ public final class Tools {
     }
 
     public static Date getDate(Object dateObj) {
+        try {
+            Long t = (Long) dateObj;
+            return new Date(t);
+        } catch (Exception e) {}
         HashMap<String, Long> t = (HashMap<String, Long>) dateObj;
         long timestamp = 0;
         try {

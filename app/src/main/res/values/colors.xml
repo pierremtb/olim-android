@@ -5,7 +5,9 @@
     <color name="colorAccent">#FFEB3B</color>
     <color name="colorPrimaryText">#D9000000</color>
     <color name="colorSecondaryText">#8C000000</color>
+    <color name="colorSecondaryTextNonFaded">#717171</color>
     <color name="colorHintText">#66000000</color>
+    <color name="colorHintTextNonFaded">#999999</color>
     <color name="colorPrimaryTextColored">#FFFFFF</color>
     <color name="white">#FFFFFF</color>
     <color name="colorDivider">#1F000000</color>

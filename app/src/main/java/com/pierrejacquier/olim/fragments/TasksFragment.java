@@ -1,16 +1,29 @@
 package com.pierrejacquier.olim.fragments;
 
 import android.content.Context;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import com.mikepenz.iconics.context.IconicsLayoutInflater;
+import com.rengwuxian.materialedittext.MaterialEditText;
 
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
@@ -21,7 +34,10 @@ import com.pierrejacquier.olim.helpers.Tools;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+
 import im.delight.android.ddp.MeteorSingleton;
+import im.delight.android.ddp.ResultListener;
 import im.delight.android.ddp.db.Document;
 
 import com.pierrejacquier.olim.helpers.OnStartDragListener;
@@ -44,6 +60,14 @@ public class TasksFragment
     private ArrayList<Tag> tags = new ArrayList<>();
 
     private ItemTouchHelper mItemTouchHelper;
+    private ImageView newTaskClearButton;
+    private LinearLayout previewTaskLayout;
+    private TextView taskPrimaryText;
+    private TextView taskSecondaryText;
+    private MaterialEditText taskAdderInput;
+    private ImageView taskAdderSendButton;
+
+    private Task newTask = new Task();
 
     public TasksFragment() {}
 
@@ -93,11 +117,69 @@ public class TasksFragment
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
         setupTasksRecyclerView(view, overdueTasks, R.id.overdueTasksRecyclerView, this);
         setupTasksRecyclerView(view, todayTasks, R.id.todayTasksRecyclerView, this);
         setupTasksRecyclerView(view, tomorrowTasks, R.id.tomorrowTasksRecyclerView, this);
         setupTasksRecyclerView(view, inTheNextSevenDaysTasks, R.id.inTheNextSevenDaysTasksRecyclerView, this);
         setupTasksRecyclerView(view, laterTasks, R.id.laterTasksRecyclerView, this);
+
+        newTaskClearButton = (ImageView) view.findViewById(R.id.newTaskClearButton);
+        taskAdderSendButton = (ImageView) view.findViewById(R.id.taskAdderSendButton);
+        previewTaskLayout = (LinearLayout) view.findViewById(R.id.previewTaskLayout);
+        taskAdderInput = (MaterialEditText) view.findViewById(R.id.taskAdderInput);
+        taskPrimaryText = (TextView) view.findViewById(R.id.taskPrimaryText);
+        taskSecondaryText = (TextView) view.findViewById(R.id.taskSecondaryText);
+        taskSecondaryText.setText((new Date()).toLocaleString());
+
+        taskAdderInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                String text = editable.toString();
+                if (!text.equals("")) {
+                    newTask.setTitle(text);
+                    renderPreviewTask();
+                } else {
+                    previewTaskLayout.setVisibility(View.GONE);
+                }
+            }
+        });
+
+        taskAdderInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                boolean handled = false;
+                if (i == EditorInfo.IME_ACTION_SEND) {
+                    insertTask();
+                    handled = true;
+                }
+                return handled;
+            }
+        });
+
+        newTaskClearButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                destroyPreviewTask();
+            }
+        });
+
+        taskAdderSendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                insertTask();
+            }
+        });
     }
 
     private void setupTasksRecyclerView(View view, ArrayList<Task> tasks, int id, OnStartDragListener dragStartListener) {
@@ -189,6 +271,43 @@ public class TasksFragment
             tags.add(new Tag(tag));
         }
     }
+
+    private void insertTask() {
+        newTask.setCreatedAt(new Date());
+        MeteorSingleton.getInstance().insert("Tasks", newTask.getObject(), new ResultListener() {
+            @Override
+            public void onSuccess(String result) {
+                Log.d("auie", "Succes");
+            }
+
+            @Override
+            public void onError(String error, String reason, String details) {
+                Log.d("Error", error);
+                Log.d("Error", reason);
+            }
+        });
+        Log.d("NT: ", newTask.getObject().toString());
+        destroyPreviewTask();
+    }
+
+    // Display
+
+    private void renderPreviewTask() {
+        newTask.setOwner(MeteorSingleton.getInstance().getUserId());
+        previewTaskLayout.setVisibility(View.VISIBLE);
+        taskAdderSendButton.setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.SRC_IN);
+        taskPrimaryText.setText(newTask.getTitle());
+        taskSecondaryText.setText(newTask.getDueDate().toLocaleString());
+    }
+
+    private void destroyPreviewTask() {
+        newTask = new Task();
+        previewTaskLayout.setVisibility(View.GONE);
+        taskAdderSendButton.setColorFilter(getResources().getColor(R.color.colorHintTextNonFaded), PorterDuff.Mode.SRC_IN);
+        taskPrimaryText.setText("");
+        taskSecondaryText.setText(new Date().toLocaleString());
+    }
+
 }
 
 

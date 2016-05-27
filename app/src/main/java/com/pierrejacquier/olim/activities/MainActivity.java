@@ -7,6 +7,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.ActionBar;
 import android.util.Log;
 import android.view.View;
@@ -28,6 +29,8 @@ import im.delight.android.ddp.MeteorSingleton;
 import im.delight.android.ddp.SubscribeListener;
 import im.delight.android.ddp.db.memory.InMemoryDatabase;
 
+import com.mikepenz.iconics.context.IconicsContextWrapper;
+import com.mikepenz.iconics.context.IconicsLayoutInflater;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.data.User;
@@ -87,7 +90,8 @@ public class MainActivity
         // Start Meteor connection
 
         try {
-            meteor = MeteorSingleton.createInstance(this, "ws://olim.herokuapp.com/websocket", new InMemoryDatabase());
+            //meteor = MeteorSingleton.createInstance(this, "ws://olim.herokuapp.com/websocket", new InMemoryDatabase());
+            meteor = MeteorSingleton.createInstance(this, "ws://192.168.0.100:3000/websocket", new InMemoryDatabase());
             meteor.addCallback(this);
             meteor.connect();
         } catch (Exception e) {}
@@ -279,4 +283,8 @@ public class MainActivity
         loadingDialog.dismiss();
     }
 
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(IconicsContextWrapper.wrap(newBase));
+    }
 }

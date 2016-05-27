@@ -369,12 +369,16 @@
             android:id="@+id/noTasksLayout"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-            <ImageView
+
+            <com.mikepenz.iconics.view.IconicsImageView
                 android:layout_width="130dp"
                 android:layout_height="80dp"
                 android:layout_gravity="center"
                 android:layout_marginTop="120dp"
-                android:src="@drawable/ic_videogame_asset"/>
+                android:layout_marginBottom="20dp"
+                app:iiv_color="@color/colorHintText"
+                app:iiv_icon="gmd-weekend" />
+
             <com.devspark.robototextview.widget.RobotoTextView
                 android:layout_width="wrap_content"
                 android:textColor="@color/colorSecondaryText"
@@ -398,30 +402,120 @@
         android:layout_alignParentBottom="true"
         card_view:cardElevation="8dp">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:padding="@dimen/container_margin"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-            <ImageView
-                android:id="@+id/taskAdderSendButton"
-                android:layout_width="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentEnd="true"
-                android:tint="@color/colorAccent"
-                android:layout_centerVertical="true"
-                android:layout_marginLeft="@dimen/container_margin"
+            <LinearLayout
+                android:id="@+id/previewTaskLayout"
+                android:layout_width="match_parent"
+                android:visibility="visible"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_menu_send"/>
+                android:orientation="vertical">
 
-            <com.rengwuxian.materialedittext.MaterialEditText
-                android:id="@+id/taskAdderInput"
-                android:layout_width="fill_parent"
-                android:layout_toLeftOf="@id/taskAdderSendButton"
-                android:layout_toStartOf="@id/taskAdderSendButton"
-                android:layout_height="45dp"
-                android:hint="@string/add_a_new_task"/>
-        </RelativeLayout>
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="@dimen/container_margin">
+
+                    <com.devspark.robototextview.widget.RobotoTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="16sp"
+                        android:text="@string/add_a_task"
+                        android:layout_centerVertical="true"
+                        android:textColor="@color/colorHintText"
+                    />
+
+                    <ImageView
+                        android:id="@+id/newTaskClearButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:tint="@color/colorHintTextNonFaded"
+                        android:src="@drawable/ic_clear"/>
+
+                </RelativeLayout>
+
+                <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                    xmlns:tools="http://schemas.android.com/tools"
+                    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+                    android:layout_width="match_parent"
+                    android:id="@+id/workoutTile"
+                    android:background="@drawable/background"
+                    android:layout_height="72dp">
+
+                    <ImageButton
+                        android:id="@+id/taskTag"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginLeft="16dp"
+                        android:layout_marginStart="16dp"
+                        android:background="@drawable/user_profile_image_background"
+                        android:src="@drawable/ic_label_outline"
+                        android:tint="@color/white"
+                        android:layout_centerVertical="true"
+                        android:scaleType="center"
+                        />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginLeft="72dp"
+                        android:layout_marginRight="16dp"
+                        android:layout_centerVertical="true">
+
+                        <TextView
+                            android:id="@+id/taskPrimaryText"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:text="@string/new_task"
+                            android:textColor="@color/colorPrimaryText"
+                            android:textSize="@dimen/list_tile_primary_text" />
+
+                        <TextView
+                            android:id="@+id/taskSecondaryText"
+                            android:layout_width="fill_parent"
+                            android:text="@string/date"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/colorSecondaryText"
+                            android:textSize="@dimen/list_tile_secondary_text" />
+                    </LinearLayout>
+                </RelativeLayout>
+
+                <include layout="@layout/card_divider" />
+            </LinearLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:padding="@dimen/container_margin"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/taskAdderSendButton"
+                    android:layout_width="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:tint="@color/colorHintTextNonFaded"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="@dimen/container_margin"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_menu_send"/>
+
+                <com.rengwuxian.materialedittext.MaterialEditText
+                    android:id="@+id/taskAdderInput"
+                    android:layout_width="fill_parent"
+                    android:layout_toLeftOf="@id/taskAdderSendButton"
+                    android:layout_toStartOf="@id/taskAdderSendButton"
+                    android:layout_height="45dp"
+                    android:inputType="textCapSentences|textAutoCorrect"
+                    android:imeOptions="actionSend"
+                    android:hint="@string/add_a_new_task"/>
+            </RelativeLayout>
+
+        </LinearLayout>
 
     </android.support.v7.widget.CardView>
 

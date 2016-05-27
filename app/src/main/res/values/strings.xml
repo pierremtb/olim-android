@@ -30,4 +30,9 @@
     <string name="no_task_yet">No task, yet</string>
     <string name="nothing_to_do">Nothing to do</string>
     <string name="add_a_new_task">Add a new task tommorrow at 8pm...</string>
+    <string name="new_todo">New task</string>
+    <string name="new_task">New task</string>
+    <string name="date">Date</string>
+    <string name="add_note">Add a new task</string>
+    <string name="add_a_task">Add a new task</string>
 </resources>
