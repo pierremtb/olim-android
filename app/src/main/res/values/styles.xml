@@ -26,4 +26,7 @@
         <item name="color">@color/colorSecondaryText</item>
     </style>
 
+    <style name="commonListItemStyle">
+    </style>
+
 </resources>

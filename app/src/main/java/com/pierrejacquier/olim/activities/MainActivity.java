@@ -91,15 +91,17 @@ public class MainActivity
 
         try {
             //meteor = MeteorSingleton.createInstance(this, "ws://olim.herokuapp.com/websocket", new InMemoryDatabase());
-            meteor = MeteorSingleton.createInstance(this, "ws://192.168.0.100:3000/websocket", new InMemoryDatabase());
+            meteor = MeteorSingleton.createInstance(this, "ws://192.168.0.102:3000/websocket", new InMemoryDatabase());
             meteor.addCallback(this);
             meteor.connect();
-        } catch (Exception e) {}
 
-        loadingDialog = new MaterialDialog.Builder(this)
-                .content(R.string.please_wait)
-                .progress(true, 0)
-                .show();
+            loadingDialog = new MaterialDialog.Builder(this)
+                    .content(R.string.please_wait)
+                    .progress(true, 0)
+                    .show();
+        } catch (Exception e) {
+            toast("Fail");
+        }
     }
 
     @Override
@@ -211,7 +213,7 @@ public class MainActivity
 
     // Navigation
 
-    private void showTasks() {
+    public void showTasks() {
         Fragment TasksFG = new TasksFragment();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.mainFrame, TasksFG);

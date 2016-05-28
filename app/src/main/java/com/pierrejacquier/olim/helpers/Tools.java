@@ -106,7 +106,7 @@ public final class Tools {
     }
 
     public static String getString(HashMap<String, ?> obj, String key) {
-        return obj.containsKey(key) ? String.valueOf(obj.get(key)) : "";
+        return obj.containsKey(key) ? String.valueOf(obj.get(key)) : null;
     }
 
     public static int getInt(HashMap<String, ?> obj, String key) {
@@ -130,7 +130,18 @@ public final class Tools {
     }
 
     public static Object getObject(HashMap<String, ?> obj, String key) {
-        return obj.containsKey(key) ? obj.get(key) : new Object();
+        return obj.containsKey(key) ? obj.get(key) : null;
+    }
+
+    public static HashMap<String, Object> getHashMap(HashMap<String, ?> obj, String key) {
+        if(!obj.containsKey(key)) {
+            return null;
+        }
+        try {
+            return (HashMap<String, Object>) obj.get(key);
+        } catch(Exception e) {
+            return null;
+        }
     }
 
     public static String[] getStringsArray(HashMap<String, ?> obj, String key) {
@@ -158,5 +169,20 @@ public final class Tools {
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
+    }
+
+    public static <T extends Enum<T>> T valueOfIgnoreCase(
+            Class<T> enumeration, String name) {
+
+        for (T enumValue : enumeration.getEnumConstants()) {
+            if (enumValue.name().equalsIgnoreCase(name)) {
+                return enumValue;
+            }
+        }
+
+        throw new IllegalArgumentException(String.format(
+                "There is no value with name '%s' in Enum %s",
+                name, enumeration.getName()
+        ));
     }
 }

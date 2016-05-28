@@ -1,5 +1,7 @@
 package com.pierrejacquier.olim.data;
 
+import android.util.Log;
+
 import com.pierrejacquier.olim.helpers.Tools;
 
 import java.lang.reflect.Field;
@@ -8,6 +10,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import im.delight.android.ddp.MeteorSingleton;
+import im.delight.android.ddp.ResultListener;
 import im.delight.android.ddp.db.Document;
 
 public class Task {
@@ -30,7 +34,7 @@ public class Task {
         this.createdAt = Tools.getDate(task, "createdAt");
         this.dueDate = Tools.getDate(task, "dueDate");
         this.done = Tools.getBoolean(task, "done");
-        this.reminder = (HashMap<String, Object>) Tools.getObject(task, "reminder", true);
+        this.reminder = Tools.getHashMap(task, "reminder");
     }
 
     public Task() {
@@ -129,6 +133,49 @@ public class Task {
         }
         task.put("done", this.done);
         return task;
+    }
+
+    public void markAsDoneServer() {
+        String _id = this.getId();
+        if (_id != null) {
+            Map<String, Object> update = new HashMap<>();
+            update.put("done", true);
+            callUpdateTask(_id, update);
+        }
+    }
+
+    public void markAsNotDoneServer() {
+        String _id = this.getId();
+        if (_id != null) {
+            Map<String, Object> update = new HashMap<>();
+            update.put("done", false);
+            callUpdateTask(_id, update);
+        }
+    }
+
+    public void toggleDoneServer() {
+        String _id = this.getId();
+        if (_id != null) {
+            Map<String, Object> update = new HashMap<>();
+            update.put("done", !this.isDone());
+            callUpdateTask(_id, update);
+        }
+    }
+
+    public void callUpdateTask(String _id, Map<String, Object> update) {
+        MeteorSingleton.getInstance()
+            .call("updateTask", new Object[]{ _id, update }, new ResultListener() {
+                @Override
+                public void onSuccess(String result) {
+                    Log.d("Success", "test");
+                }
+
+                @Override
+                public void onError(String error, String reason, String details) {
+                    Log.d("Error", error);
+                    Log.d("Error", reason);
+                }
+            });
     }
 
     public String toString() {

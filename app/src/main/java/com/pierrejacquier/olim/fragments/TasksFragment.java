@@ -2,9 +2,12 @@ package com.pierrejacquier.olim.fragments;
 
 import android.content.Context;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.NinePatchDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -22,12 +25,18 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
+import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
+import com.h6ah4i.android.widget.advrecyclerview.decoration.ItemShadowDecorator;
+import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator;
+import com.h6ah4i.android.widget.advrecyclerview.swipeable.RecyclerViewSwipeManager;
+import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchActionGuardManager;
 import com.mikepenz.iconics.context.IconicsLayoutInflater;
+import com.pierrejacquier.olim.adapters.SwipeableTaskAdapter;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
-import com.pierrejacquier.olim.adapters.TasksAdapter;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.helpers.Tools;
@@ -40,13 +49,9 @@ import im.delight.android.ddp.MeteorSingleton;
 import im.delight.android.ddp.ResultListener;
 import im.delight.android.ddp.db.Document;
 
-import com.pierrejacquier.olim.helpers.OnStartDragListener;
-import com.pierrejacquier.olim.helpers.SimpleItemTouchHelperCallback;
-
 public class TasksFragment
         extends Fragment
-        implements View.OnClickListener,
-            OnStartDragListener {
+        implements View.OnClickListener {
 
     private Olim app;
     private OnFragmentInteractionListener Main;
@@ -118,12 +123,14 @@ public class TasksFragment
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        setupTasksRecyclerView(view, overdueTasks, R.id.overdueTasksRecyclerView, this);
-        setupTasksRecyclerView(view, todayTasks, R.id.todayTasksRecyclerView, this);
-        setupTasksRecyclerView(view, tomorrowTasks, R.id.tomorrowTasksRecyclerView, this);
-        setupTasksRecyclerView(view, inTheNextSevenDaysTasks, R.id.inTheNextSevenDaysTasksRecyclerView, this);
-        setupTasksRecyclerView(view, laterTasks, R.id.laterTasksRecyclerView, this);
+        // Setup TasksGroups
+        setupTasksRecyclerView(view, overdueTasks, R.id.overdueTasksRecyclerView);
+        setupTasksRecyclerView(view, todayTasks, R.id.todayTasksRecyclerView);
+        setupTasksRecyclerView(view, tomorrowTasks, R.id.tomorrowTasksRecyclerView);
+        setupTasksRecyclerView(view, inTheNextSevenDaysTasks, R.id.inTheNextSevenDaysTasksRecyclerView);
+        setupTasksRecyclerView(view, laterTasks, R.id.laterTasksRecyclerView);
 
+        // Setup TaskAdder
         newTaskClearButton = (ImageView) view.findViewById(R.id.newTaskClearButton);
         taskAdderSendButton = (ImageView) view.findViewById(R.id.taskAdderSendButton);
         previewTaskLayout = (LinearLayout) view.findViewById(R.id.previewTaskLayout);
@@ -131,7 +138,6 @@ public class TasksFragment
         taskPrimaryText = (TextView) view.findViewById(R.id.taskPrimaryText);
         taskSecondaryText = (TextView) view.findViewById(R.id.taskSecondaryText);
         taskSecondaryText.setText((new Date()).toLocaleString());
-
         taskAdderInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -154,7 +160,6 @@ public class TasksFragment
                 }
             }
         });
-
         taskAdderInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
@@ -166,14 +171,12 @@ public class TasksFragment
                 return handled;
             }
         });
-
         newTaskClearButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 destroyPreviewTask();
             }
         });
-
         taskAdderSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -182,18 +185,57 @@ public class TasksFragment
         });
     }
 
-    private void setupTasksRecyclerView(View view, ArrayList<Task> tasks, int id, OnStartDragListener dragStartListener) {
+    private void setupTasksRecyclerView(View view, final ArrayList<Task> tasks, int id) {
+        RecyclerView mRecyclerView;
+        RecyclerView.LayoutManager mLayoutManager;
+        RecyclerView.Adapter mWrappedAdapter;
+        RecyclerViewSwipeManager mRecyclerViewSwipeManager;
+        RecyclerViewTouchActionGuardManager mRecyclerViewTouchActionGuardManager;
 
-        TasksAdapter adapter = new TasksAdapter(dragStartListener, tasks);
+        mRecyclerView = (RecyclerView) view.findViewById(id);
+        mLayoutManager = new LinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false);
 
-        RecyclerView recyclerView = (RecyclerView) view.findViewById(id);
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setAdapter(adapter);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        mRecyclerViewTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
+        mRecyclerViewTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
+        mRecyclerViewTouchActionGuardManager.setEnabled(true);
 
-        ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback(adapter);
-        mItemTouchHelper = new ItemTouchHelper(callback);
-        mItemTouchHelper.attachToRecyclerView(recyclerView);
+        mRecyclerViewSwipeManager = new RecyclerViewSwipeManager();
+
+        final SwipeableTaskAdapter myItemAdapter = new SwipeableTaskAdapter(tasks);
+        myItemAdapter.setEventListener(new SwipeableTaskAdapter.EventListener() {
+            @Override
+            public void onItemRemoved(int position) {
+                Task task = tasks.get(position);
+                Log.d("ToggleDone", task.toString());
+                task.toggleDoneServer();
+            }
+
+            @Override
+            public void onItemPinned(int position) {
+                Log.d("Pinned", position + "");
+            }
+
+            @Override
+            public void onItemViewClicked(View v, boolean pinned) {
+                Log.d("Clicekd", v.toString());
+            }
+        });
+
+        mWrappedAdapter = mRecyclerViewSwipeManager.createWrappedAdapter(myItemAdapter);
+
+        final GeneralItemAnimator animator = new SwipeDismissItemAnimator();
+        animator.setSupportsChangeAnimations(false);
+
+        mRecyclerView.setLayoutManager(mLayoutManager);
+        mRecyclerView.setAdapter(mWrappedAdapter);
+        mRecyclerView.setItemAnimator(animator);
+
+        if (!supportsViewElevation()) {
+            mRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
+        }
+        mRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
+        mRecyclerViewTouchActionGuardManager.attachRecyclerView(mRecyclerView);
+        mRecyclerViewSwipeManager.attachRecyclerView(mRecyclerView);
     }
 
     @Override
@@ -214,11 +256,6 @@ public class TasksFragment
     @Override
     public void onClick(View v) {
         int id = v.getId();
-    }
-
-    @Override
-    public void onStartDrag(RecyclerView.ViewHolder viewHolder) {
-        mItemTouchHelper.startDrag(viewHolder);
     }
 
     public interface OnFragmentInteractionListener {
@@ -306,6 +343,11 @@ public class TasksFragment
         taskAdderSendButton.setColorFilter(getResources().getColor(R.color.colorHintTextNonFaded), PorterDuff.Mode.SRC_IN);
         taskPrimaryText.setText("");
         taskSecondaryText.setText(new Date().toLocaleString());
+    }
+
+
+    private boolean supportsViewElevation() {
+        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
     }
 
 }
