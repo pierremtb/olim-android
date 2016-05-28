@@ -79,7 +79,6 @@
                 card_view:cardCornerRadius="@dimen/card_corner_radius"
                 card_view:cardElevation="@dimen/cards_elevation">
 
-
                 <android.support.v7.widget.RecyclerView
                     android:id="@+id/overdueTasksRecyclerView"
                     android:scrollbars="vertical"
@@ -412,7 +411,7 @@
             <LinearLayout
                 android:id="@+id/previewTaskLayout"
                 android:layout_width="match_parent"
-                android:visibility="visible"
+                android:visibility="gone"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 

@@ -66,17 +66,6 @@ public class MainActivity
         actionBar.setElevation(0);
         actionBar.setTitle("Tasks");
 
-        /*
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-        */
-
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -150,9 +139,12 @@ public class MainActivity
                 showTags();
                 break;
             case R.id.navigation_drawer_settings:
+                launchSettings();
                 break;
             case R.id.navigation_drawer_signout:
-                meteor.logout();
+                if (app.getCurrentUser() != null) {
+                    meteor.logout();
+                }
                 launchLogin();
                 break;
         }
@@ -167,6 +159,12 @@ public class MainActivity
     @Override
     public void onConnect(boolean signedInAutomatically) {
         if (signedInAutomatically && meteor.isLoggedIn()) {
+            app.setCurrentUser(new User(
+                    meteor.getDatabase()
+                            .getCollection("users")
+                            .getDocument(meteor.getUserId())
+                )
+            );
             prepareBoard(false);
         } else {
             launchLogin();
@@ -181,17 +179,23 @@ public class MainActivity
 
     @Override
     public void onDataAdded(String collectionName, String documentID, String newValuesJson) {
-        showTasks();
+        if (app.getCurrentUser() != null) {
+            showTasks();
+        }
     }
 
     @Override
     public void onDataChanged(String collectionName, String documentID, String updatedValuesJson, String removedValuesJson) {
-        showTasks();
+        if (app.getCurrentUser() != null) {
+            showTasks();
+        }
     }
 
     @Override
     public void onDataRemoved(String collectionName, String documentID) {
-        showTasks();
+        if (app.getCurrentUser() != null) {
+            showTasks();
+        }
     }
 
     @Override
@@ -234,6 +238,11 @@ public class MainActivity
         startActivityForResult(intent, REQUEST_LOGIN);
     }
 
+    private void launchSettings() {
+        Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+        startActivity(intent);
+    }
+
     // Display
 
     public void toast(String str) {
@@ -246,13 +255,6 @@ public class MainActivity
 
     private void prepareBoard(final boolean doGet) {
         if(true) {
-            User user = new User(
-                    meteor.getDatabase()
-                            .getCollection("users")
-                            .getDocument(meteor.getUserId())
-            );
-            app.setCurrentUser(user);
-            Log.d("Main", app.getCurrentUser().toString());
             meteor.subscribe("all-user-data-tasks-tags", new Object[]{}, new SubscribeListener() {
                 @Override
                 public void onSuccess() {

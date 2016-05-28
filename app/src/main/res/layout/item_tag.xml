@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:id="@+id/workoutTile"
+    android:background="@drawable/background"
+    android:layout_height="72dp">
+
+    <ImageButton
+        android:id="@+id/tagIconButton"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:src="@drawable/ic_label_outline"
+        android:tint="@color/white"
+        android:background="@null"
+        android:layout_centerVertical="true"
+        android:scaleType="center"
+    />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginLeft="72dp"
+        android:layout_marginRight="16dp"
+        android:layout_centerVertical="true">
+
+        <TextView
+            android:id="@+id/tagPrimaryText"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="@color/colorPrimaryText"
+            android:textSize="@dimen/list_tile_primary_text"
+        />
+
+        <TextView
+            android:id="@+id/tagSecondaryText"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorSecondaryText"
+            android:textSize="@dimen/list_tile_secondary_text"
+        />
+    </LinearLayout>
+</RelativeLayout>

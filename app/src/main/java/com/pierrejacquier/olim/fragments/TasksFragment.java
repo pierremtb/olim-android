@@ -33,6 +33,7 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.RecyclerViewSwipeMana
 import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchActionGuardManager;
 import com.mikepenz.iconics.context.IconicsLayoutInflater;
 import com.pierrejacquier.olim.adapters.SwipeableTaskAdapter;
+import com.pierrejacquier.olim.data.User;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
 import com.pierrejacquier.olim.Olim;
@@ -44,6 +45,7 @@ import com.pierrejacquier.olim.helpers.Tools;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 import im.delight.android.ddp.MeteorSingleton;
 import im.delight.android.ddp.ResultListener;
@@ -53,7 +55,7 @@ public class TasksFragment
         extends Fragment
         implements View.OnClickListener {
 
-    private Olim app;
+    Olim app;
     private OnFragmentInteractionListener Main;
 
     private ArrayList<Task> overdueTasks = new ArrayList<>();
@@ -62,7 +64,7 @@ public class TasksFragment
     private ArrayList<Task> inTheNextSevenDaysTasks = new ArrayList<>();
     private ArrayList<Task> laterTasks = new ArrayList<>();
 
-    private ArrayList<Tag> tags = new ArrayList<>();
+    private List<Tag> tags = new ArrayList<>();
 
     private ItemTouchHelper mItemTouchHelper;
     private ImageView newTaskClearButton;
@@ -80,15 +82,21 @@ public class TasksFragment
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = (Olim) getActivity().getApplicationContext();
-        if (MeteorSingleton.getInstance().isLoggedIn()) {
-            fetchTasks();
-            fetchTags();
-        }
+        app.setCurrentUser(new User(
+                MeteorSingleton.getInstance().getDatabase()
+                    .getCollection("users")
+                    .getDocument(MeteorSingleton.getInstance().getUserId())
+            )
+        );
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        if (MeteorSingleton.getInstance().isLoggedIn()) {
+            fetchTasks();
+            tags = app.getCurrentUser().getTags();
+        }
         View myView = inflater.inflate(R.layout.fragment_tasks, container, false);
         LinearLayout overdueTasksLayout = (LinearLayout) myView.findViewById(R.id.overdueTasksLayout);
         LinearLayout todayTasksLayout = (LinearLayout) myView.findViewById(R.id.todayTasksLayout);
@@ -264,10 +272,7 @@ public class TasksFragment
 
     // Data
     private void fetchTasks() {
-        Document[] tasks = MeteorSingleton.getInstance()
-                .getDatabase()
-                .getCollection("Tasks")
-                .whereEqual("owner", MeteorSingleton.getInstance().getUserId()).find();
+        List<Task> tasks = app.getCurrentUser().getTasks();
 
         Calendar dueDate = Calendar.getInstance();
         Calendar today = Calendar.getInstance();
@@ -281,8 +286,7 @@ public class TasksFragment
         Tools.setStartOfDay(inTheNextSevenDaysStart);
         Tools.setStartOfDay(inTheNextSevenDaysEnd);
 
-        for (Document taskDoc : tasks) {
-            Task task = new Task(taskDoc);
+        for (Task task : tasks) {
             dueDate.setTime(task.getDueDate());
 
             if (today.after(dueDate)) {
@@ -296,16 +300,6 @@ public class TasksFragment
             } else {
                 laterTasks.add(task);
             }
-        }
-    }
-
-    private void fetchTags() {
-        Document[] tagsDocs = MeteorSingleton.getInstance()
-                .getDatabase()
-                .getCollection("Tags")
-                .whereEqual("owner", MeteorSingleton.getInstance().getUserId()).find();
-        for (Document tag : tagsDocs) {
-            tags.add(new Tag(tag));
         }
     }
 
