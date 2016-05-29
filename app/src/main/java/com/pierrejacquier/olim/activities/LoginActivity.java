@@ -19,14 +19,18 @@ import im.delight.android.ddp.Meteor;
 import im.delight.android.ddp.MeteorCallback;
 import im.delight.android.ddp.MeteorSingleton;
 import im.delight.android.ddp.ResultListener;
+import im.delight.android.ddp.db.Document;
 
 import com.mikepenz.iconics.context.IconicsLayoutInflater;
+import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
+import com.pierrejacquier.olim.data.User;
 
 public class LoginActivity extends AppCompatActivity implements MeteorCallback {
     private static final String TAG = "LoginActivity";
     private static final int REQUEST_SIGNUP = 0;
 
+    Olim app;
     private Meteor mMeteor;
     public MaterialDialog loadingDialog;
 
@@ -40,6 +44,7 @@ public class LoginActivity extends AppCompatActivity implements MeteorCallback {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.inject(this);
+        app = (Olim) getApplicationContext();
 
         _emailText.clearFocus();
 
@@ -132,6 +137,14 @@ public class LoginActivity extends AppCompatActivity implements MeteorCallback {
     }
 
     private void onLoginSuccess() {
+        if (MeteorSingleton.getInstance().isLoggedIn()) {
+            Document userDoc = MeteorSingleton.getInstance().getDatabase()
+                    .getCollection("users")
+                    .getDocument(MeteorSingleton.getInstance().getUserId());
+            if (userDoc != null) {
+                app.setCurrentUser(new User(userDoc));
+            }
+        }
         _loginButton.setEnabled(true);
         Intent intent = getIntent();
         setResult(RESULT_OK, intent);

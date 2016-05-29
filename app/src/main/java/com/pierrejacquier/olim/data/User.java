@@ -86,6 +86,25 @@ public class User {
         return tasks;
     }
 
+    public List<Task> getTasksByTag(Tag tag) {
+        List <Task> tasks = new ArrayList<>();
+
+        if (this.getId() == null) {
+            return tasks;
+        }
+
+        Document[] tasksDocs = MeteorSingleton.getInstance()
+                .getDatabase()
+                .getCollection("Tasks")
+                .whereEqual("owner", this.getId())
+                .whereEqual("tag", tag.getId())
+                .find();
+        for (Document task : tasksDocs) {
+            tasks.add(new Task(task));
+        }
+        return tasks;
+    }
+
     public String toString() {
         StringBuilder result = new StringBuilder();
         String newLine = System.getProperty("line.separator");

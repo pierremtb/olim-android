@@ -38,6 +38,10 @@ public class Tag {
         return name;
     }
 
+    public String getHashName() {
+        return "#" + name;
+    }
+
     public String getComments() {
         return comments;
     }

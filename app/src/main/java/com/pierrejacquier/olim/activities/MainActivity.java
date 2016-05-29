@@ -50,6 +50,7 @@ public class MainActivity
     public static MaterialDialog loadingDialog;
     public static ActionBar actionBar;
     private static final int REQUEST_LOGIN = 0;
+    private String currentFragmentName = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,7 +117,8 @@ public class MainActivity
 
         switch (id) {
             case R.id.action_filter:
-                // Handle filter action
+                TasksFragment tasksFragment = (TasksFragment) getSupportFragmentManager().findFragmentByTag("TasksFragment");
+                tasksFragment.showTagsFilteringDialog();
                 break;
             case R.id.action_search:
                 // Handle search action
@@ -179,23 +181,17 @@ public class MainActivity
 
     @Override
     public void onDataAdded(String collectionName, String documentID, String newValuesJson) {
-        if (app.getCurrentUser() != null) {
-            showTasks();
-        }
+        updateCurrentView(collectionName);
     }
 
     @Override
     public void onDataChanged(String collectionName, String documentID, String updatedValuesJson, String removedValuesJson) {
-        if (app.getCurrentUser() != null) {
-            showTasks();
-        }
+        updateCurrentView(collectionName);
     }
 
     @Override
     public void onDataRemoved(String collectionName, String documentID) {
-        if (app.getCurrentUser() != null) {
-            showTasks();
-        }
+        updateCurrentView(collectionName);
     }
 
     @Override
@@ -220,8 +216,9 @@ public class MainActivity
     public void showTasks() {
         Fragment TasksFG = new TasksFragment();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        ft.replace(R.id.mainFrame, TasksFG);
+        ft.replace(R.id.mainFrame, TasksFG, "TasksFragment");
         actionBar.setTitle("Tasks");
+        currentFragmentName = "Tasks";
         ft.commit();
     }
 
@@ -230,6 +227,7 @@ public class MainActivity
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.mainFrame, TagsFG);
         actionBar.setTitle("Tags");
+        currentFragmentName = "Tags";
         ft.commit();
     }
 
@@ -244,6 +242,26 @@ public class MainActivity
     }
 
     // Display
+
+    private void updateCurrentView(String collectionName) {
+        if (currentFragmentName == null) {
+            return;
+        }
+
+        switch (currentFragmentName) {
+            case "Tasks":
+                if (collectionName.equals("Tasks")) {
+                    showTasks();
+                }
+                break;
+            case "Tags":
+                if (collectionName.equals("Tags")) {
+                    showTags();
+                }
+                break;
+        }
+
+    }
 
     public void toast(String str) {
         Context context = getApplicationContext();
