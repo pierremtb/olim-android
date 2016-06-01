@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:id="@+id/workoutTile"
     android:background="@drawable/background"
+    android:clickable="true"
     android:layout_height="72dp">
 
     <ImageButton

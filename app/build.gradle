@@ -41,6 +41,7 @@ android {
         compile 'com.github.johnkil.android-robototextview:robototextview:2.5.0'
         compile 'com.rengwuxian.materialedittext:library:2.1.4'
         compile 'com.jakewharton:butterknife:6.1.0'
+        compile 'com.github.rahatarmanahmed:circularprogressview:2.5.0'
         testCompile 'junit:junit:4.12'
         androidTestCompile 'com.android.support.test.espresso:espresso-core:2.2.2'
         androidTestCompile 'com.android.support.test:runner:0.5'

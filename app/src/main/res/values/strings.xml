@@ -109,4 +109,5 @@
 
     <string name="pref_title_vibrate">Vibrate</string>
     <string name="clear">Clear</string>
+    <string name="filter_with_tag">Filter by tag</string>
 </resources>

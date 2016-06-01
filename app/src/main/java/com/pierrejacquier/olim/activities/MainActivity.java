@@ -5,7 +5,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.ActionBar;
@@ -33,7 +35,9 @@ import com.mikepenz.iconics.context.IconicsContextWrapper;
 import com.mikepenz.iconics.context.IconicsLayoutInflater;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.Olim;
+import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.data.User;
+import com.pierrejacquier.olim.fragments.LoadingFragment;
 import com.pierrejacquier.olim.fragments.TagsFragment;
 import com.pierrejacquier.olim.fragments.TasksFragment;
 
@@ -51,6 +55,9 @@ public class MainActivity
     public static ActionBar actionBar;
     private static final int REQUEST_LOGIN = 0;
     private String currentFragmentName = null;
+    private MenuItem filterMenu;
+    private Menu actionsMenu;
+    private final int FILTER_MENU_POSITION = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,38 +66,34 @@ public class MainActivity
         app = (Olim) getApplicationContext();
 
         // Layout stuff
-
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         actionBar = getSupportActionBar();
         actionBar.setElevation(0);
         actionBar.setTitle("Tasks");
-
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
-
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-
         // Start Meteor connection
-
         try {
             //meteor = MeteorSingleton.createInstance(this, "ws://olim.herokuapp.com/websocket", new InMemoryDatabase());
-            meteor = MeteorSingleton.createInstance(this, "ws://192.168.0.102:3000/websocket", new InMemoryDatabase());
+            meteor = MeteorSingleton.createInstance(this, "ws://192.168.0.103:3000/websocket", new InMemoryDatabase());
             meteor.addCallback(this);
             meteor.connect();
 
-            loadingDialog = new MaterialDialog.Builder(this)
+            /*loadingDialog = new MaterialDialog.Builder(this)
                     .content(R.string.please_wait)
                     .progress(true, 0)
-                    .show();
+                    .show();*/
+            showLoadingFragment();
         } catch (Exception e) {
-            toast("Fail");
+            getTasksFragment().showSnack("Failed. Try again");
         }
     }
 
@@ -108,6 +111,7 @@ public class MainActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+        actionsMenu = menu;
         return true;
     }
 
@@ -117,11 +121,15 @@ public class MainActivity
 
         switch (id) {
             case R.id.action_filter:
-                TasksFragment tasksFragment = (TasksFragment) getSupportFragmentManager().findFragmentByTag("TasksFragment");
-                tasksFragment.showTagsFilteringDialog();
+                if (currentFragmentName.equals("TasksFragment")) {
+                    TasksFragment tasksFragment = (TasksFragment) getSupportFragmentManager().findFragmentByTag("TasksFragment");
+                    tasksFragment.showTagsFilteringDialog();
+                }
                 break;
             case R.id.action_search:
-                // Handle search action
+                if (currentFragmentName.equals("TasksFragment")) {
+                    getTasksFragment().showSnack("Search is not available, yet");
+                }
                 break;
             default: break;
         }
@@ -135,10 +143,10 @@ public class MainActivity
         int id = item.getItemId();
         switch (id) {
             case R.id.navigation_drawer_tasks:
-                showTasks();
+                showTasksFragment();
                 break;
             case R.id.navigation_drawer_tags:
-                showTags();
+                showTagsFragment();
                 break;
             case R.id.navigation_drawer_settings:
                 launchSettings();
@@ -187,6 +195,12 @@ public class MainActivity
     @Override
     public void onDataChanged(String collectionName, String documentID, String updatedValuesJson, String removedValuesJson) {
         updateCurrentView(collectionName);
+        if (collectionName.equals("Tasks")) {
+            Task task = new Task(meteor.getDatabase().getCollection("Tasks").getDocument(documentID));
+            Log.d("MainActivity@198", task.toString());
+            if (currentFragmentName.equals("TasksFragment")) {
+            }
+        }
     }
 
     @Override
@@ -213,22 +227,44 @@ public class MainActivity
 
     // Navigation
 
-    public void showTasks() {
+    public void showTasksFragment() {
         Fragment TasksFG = new TasksFragment();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.mainFrame, TasksFG, "TasksFragment");
         actionBar.setTitle("Tasks");
-        currentFragmentName = "Tasks";
+        currentFragmentName = "TasksFragment";
         ft.commit();
     }
 
-    private void showTags() {
+    private void showTagsFragment() {
+        if (actionsMenu != null) {
+            MenuItem item = actionsMenu.getItem(0);
+            item.setIcon(getResources().getDrawable(R.drawable.ic_add));
+            if (item != null) {
+                // TODO: make it disappear for real -_-
+                item.setVisible(false);
+                ActivityCompat.invalidateOptionsMenu(this);
+            }
+        }
         Fragment TagsFG = new TagsFragment();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.mainFrame, TagsFG);
         actionBar.setTitle("Tags");
-        currentFragmentName = "Tags";
+        currentFragmentName = "TagsFragment";
         ft.commit();
+    }
+
+    private void showLoadingFragment() {
+        Fragment loadingFragment = new LoadingFragment();
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(R.id.mainFrame, loadingFragment);
+        actionBar.setTitle("Olim");
+        currentFragmentName = "LoadingFragment";
+        ft.commit();
+    }
+
+    private TasksFragment getTasksFragment() {
+        return (TasksFragment) getSupportFragmentManager().findFragmentByTag("TasksFragment");
     }
 
     private void launchLogin() {
@@ -249,14 +285,17 @@ public class MainActivity
         }
 
         switch (currentFragmentName) {
-            case "Tasks":
+            case "TasksFragment":
                 if (collectionName.equals("Tasks")) {
-                    showTasks();
+                    TasksFragment tasksFragment = (TasksFragment) getSupportFragmentManager()
+                                                    .findFragmentByTag("TasksFragment");
+                    //tasksFragment.reRenderTasks();
+                    showTasksFragment();
                 }
                 break;
-            case "Tags":
+            case "TagsFragment":
                 if (collectionName.equals("Tags")) {
-                    showTags();
+                    showTagsFragment();
                 }
                 break;
         }
@@ -278,8 +317,7 @@ public class MainActivity
                 public void onSuccess() {
                     subscribed = true;
                     prepareActionBar();
-                    dismissLoadingDialog();
-                    showTasks();
+                    showTasksFragment();
                 }
 
                 @Override
@@ -290,7 +328,7 @@ public class MainActivity
             });
         } else {
             prepareActionBar();
-            showTags();
+            showTagsFragment();
         }
     }
 

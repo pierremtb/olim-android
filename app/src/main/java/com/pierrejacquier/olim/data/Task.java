@@ -6,6 +6,7 @@ import com.pierrejacquier.olim.helpers.Tools;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -149,6 +150,18 @@ public class Task {
         if (_id != null) {
             Map<String, Object> update = new HashMap<>();
             update.put("done", false);
+            callUpdateTask(_id, update);
+        }
+    }
+
+    public void postponeToNextDayServer() {
+        String _id = this.getId();
+        Calendar newDueDate = Calendar.getInstance();
+        newDueDate.setTime(this.getDueDate());
+        newDueDate.add(Calendar.DAY_OF_MONTH, 1);
+        if (_id != null) {
+            Map<String, Object> update = new HashMap<>();
+            update.put("dueDate", newDueDate.getTime());
             callUpdateTask(_id, update);
         }
     }

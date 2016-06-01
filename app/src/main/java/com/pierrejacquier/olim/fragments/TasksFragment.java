@@ -1,15 +1,19 @@
 package com.pierrejacquier.olim.fragments;
 
+import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.NinePatchDrawable;
+import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,20 +21,22 @@ import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import butterknife.ButterKnife;
+import butterknife.InjectView;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -40,23 +46,25 @@ import com.h6ah4i.android.widget.advrecyclerview.decoration.ItemShadowDecorator;
 import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.RecyclerViewSwipeManager;
 import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchActionGuardManager;
-import com.mikepenz.iconics.context.IconicsLayoutInflater;
+import com.h6ah4i.android.widget.advrecyclerview.utils.WrapperAdapterUtils;
+import com.mikepenz.google_material_typeface_library.GoogleMaterial;
+import com.mikepenz.iconics.IconicsDrawable;
 import com.pierrejacquier.olim.activities.MainActivity;
 import com.pierrejacquier.olim.adapters.SwipeableTaskAdapter;
-import com.pierrejacquier.olim.adapters.TagsAdapter;
 import com.pierrejacquier.olim.adapters.TagsListAdapter;
 import com.pierrejacquier.olim.data.User;
 import com.pierrejacquier.olim.helpers.CustomLinearLayoutManager;
+import com.pierrejacquier.olim.helpers.Graphics;
+import com.pierrejacquier.olim.helpers.TaskEventsListener;
+import com.pierrejacquier.olim.helpers.Tools;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
-import com.pierrejacquier.olim.helpers.Tools;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -70,6 +78,7 @@ public class TasksFragment
 
     Olim app;
     private OnFragmentInteractionListener Main;
+    private MainActivity mainActivity;
 
     private ArrayList<Task> overdueTasks = new ArrayList<>();
     private ArrayList<Task> todayTasks = new ArrayList<>();
@@ -78,6 +87,15 @@ public class TasksFragment
     private ArrayList<Task> laterTasks = new ArrayList<>();
 
     private List<Tag> tags = new ArrayList<>();
+    private Tag currentTag = null;
+
+    private CoordinatorLayout tasksCoordinatorLayout;
+    public View tasksView;
+
+    private TextView currentTagChipLabel;
+    private ImageButton currentTagChipIcon;
+    private ImageButton currentTagChipIconDelete;
+    private LinearLayout currentTagChipLayout;
 
     private ItemTouchHelper mItemTouchHelper;
     private ImageView newTaskClearButton;
@@ -99,12 +117,54 @@ public class TasksFragment
     private RecyclerView tomorrowTasksRecyclerView;
     private RecyclerView inTheNextSevenDaysTasksRecyclerView;
     private RecyclerView laterTasksRecyclerView;
-    
-    private RecyclerView.Adapter overdueTasksAdapter;
-    private RecyclerView.Adapter todayTasksAdapter;
-    private RecyclerView.Adapter tomorrowTasksAdapter;
-    private RecyclerView.Adapter inTheNextSevenDaysTasksAdapter;
-    private RecyclerView.Adapter laterTasksAdapter;
+
+
+    @InjectView(R.id.markAsDoneAllOverdueTasksImageView) ImageView markAsDoneAllOverdueTasksImageView;
+    @InjectView(R.id.markAsDoneAllTodayTasksImageView) ImageView markAsDoneAllTodayTasksImageView;
+    @InjectView(R.id.markAsDoneAllTomorrowTasksImageView) ImageView markAsDoneAllTomorrowTasksImageView;
+    @InjectView(R.id.markAsDoneAllInTheNextSevenDaysTasksImageView) ImageView markAsDoneAllInTheNextSevenDaysTasksImageView;
+    @InjectView(R.id.markAsDoneAllLaterTasksImageView) ImageView markAsDoneAllLaterTasksImageView;
+
+    @InjectView(R.id.postponeAllOverdueTasksImageView) ImageView postponeAllOverdueTasksImageView;
+    @InjectView(R.id.postponeAllTodayTasksImageView) ImageView postponeAllTodayTasksImageView;
+    @InjectView(R.id.postponeAllTomorrowTasksImageView) ImageView postponeAllTomorrowTasksImageView;
+    @InjectView(R.id.postponeAllInTheNextSevenDaysTasksImageView) ImageView postponeAllInTheNextSevenDaysTasksImageView;
+    @InjectView(R.id.postponeAllLaterTasksImageView) ImageView postponeAllLaterTasksImageView;
+
+    private CustomLinearLayoutManager overdueTasksLayoutManager;
+    private RecyclerViewSwipeManager overdueTasksRecyclerViewSwipeManager;
+    private RecyclerViewTouchActionGuardManager overdueTasksRecyclerViewTouchActionGuardManager;
+    private RecyclerView.Adapter overdueTasksWrappedAdapter;
+    private SwipeableTaskAdapter overdueTasksItemAdapter;
+    private GeneralItemAnimator overdueTasksAnimator;
+
+    private CustomLinearLayoutManager todayTasksLayoutManager;
+    private RecyclerViewSwipeManager todayTasksRecyclerViewSwipeManager;
+    private RecyclerViewTouchActionGuardManager todayTasksRecyclerViewTouchActionGuardManager;
+    private RecyclerView.Adapter todayTasksWrappedAdapter;
+    private SwipeableTaskAdapter todayTasksItemAdapter;
+    private GeneralItemAnimator todayTasksAnimator;
+
+    private CustomLinearLayoutManager tomorrowTasksLayoutManager;
+    private RecyclerViewSwipeManager tomorrowTasksRecyclerViewSwipeManager;
+    private RecyclerViewTouchActionGuardManager tomorrowTasksRecyclerViewTouchActionGuardManager;
+    private RecyclerView.Adapter tomorrowTasksWrappedAdapter;
+    private SwipeableTaskAdapter tomorrowTasksItemAdapter;
+    private GeneralItemAnimator tomorrowTasksAnimator;
+
+    private CustomLinearLayoutManager inTheNextSevenDaysTasksLayoutManager;
+    private RecyclerViewSwipeManager inTheNextSevenDaysTasksRecyclerViewSwipeManager;
+    private RecyclerViewTouchActionGuardManager inTheNextSevenDaysTasksRecyclerViewTouchActionGuardManager;
+    private RecyclerView.Adapter inTheNextSevenDaysTasksWrappedAdapter;
+    private SwipeableTaskAdapter inTheNextSevenDaysTasksItemAdapter;
+    private GeneralItemAnimator inTheNextSevenDaysTasksAnimator;
+
+    private CustomLinearLayoutManager laterTasksLayoutManager;
+    private RecyclerViewSwipeManager laterTasksRecyclerViewSwipeManager;
+    private RecyclerViewTouchActionGuardManager laterTasksRecyclerViewTouchActionGuardManager;
+    private RecyclerView.Adapter laterTasksWrappedAdapter;
+    private SwipeableTaskAdapter laterTasksItemAdapter;
+    private GeneralItemAnimator laterTasksAnimator;
     
 
     public MaterialDialog tagsFilteringDialog;
@@ -131,6 +191,10 @@ public class TasksFragment
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View myView = inflater.inflate(R.layout.fragment_tasks, container, false);
+        ButterKnife.inject(this, myView);
+
+        tasksView = myView;
+        tasksCoordinatorLayout = (CoordinatorLayout) myView.findViewById(R.id.tasksCoordinatorLayout);
         overdueTasksLayout = (LinearLayout) myView.findViewById(R.id.overdueTasksLayout);
         todayTasksLayout = (LinearLayout) myView.findViewById(R.id.todayTasksLayout);
         tomorrowTasksLayout = (LinearLayout) myView.findViewById(R.id.tomorrowTasksLayout);
@@ -138,16 +202,83 @@ public class TasksFragment
         laterTasksLayout = (LinearLayout) myView.findViewById(R.id.laterTasksLayout);
         noTasksLayout = (LinearLayout) myView.findViewById(R.id.noTasksLayout);
 
+        currentTagChipLabel = (TextView) myView.findViewById(R.id.currentTagChipLabel);
+        currentTagChipIcon = (ImageButton) myView.findViewById(R.id.currentTagChipIcon);
+        currentTagChipIconDelete = (ImageButton) myView.findViewById(R.id.currentTagChipDeleteIcon);
+        currentTagChipLayout = (LinearLayout) myView.findViewById(R.id.currentTagChipLayout);
+
         overdueTasksLayout = (LinearLayout) myView.findViewById(R.id.overdueTasksLayout);
         todayTasksLayout = (LinearLayout) myView.findViewById(R.id.todayTasksLayout);
         tomorrowTasksLayout = (LinearLayout) myView.findViewById(R.id.tomorrowTasksLayout);
         inTheNextSevenDaysTasksLayout = (LinearLayout) myView.findViewById(R.id.inTheNextSevenDaysTasksLayout);
         laterTasksLayout = (LinearLayout) myView.findViewById(R.id.laterTasksLayout);
         noTasksLayout = (LinearLayout) myView.findViewById(R.id.noTasksLayout);
+
+        postponeAllOverdueTasksImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                postponeAllTheseTasks(overdueTasks);
+            }
+        });
+        postponeAllTodayTasksImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                postponeAllTheseTasks(todayTasks);
+            }
+        });
+        postponeAllTomorrowTasksImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                postponeAllTheseTasks(tomorrowTasks);
+            }
+        });
+        postponeAllInTheNextSevenDaysTasksImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                postponeAllTheseTasks(inTheNextSevenDaysTasks);
+            }
+        });
+        postponeAllLaterTasksImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                postponeAllTheseTasks(laterTasks);
+            }
+        });
+        
+        markAsDoneAllOverdueTasksImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                markAsDoneAllTheseTasks(overdueTasks);
+            }
+        });
+        markAsDoneAllTodayTasksImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                markAsDoneAllTheseTasks(todayTasks);
+            }
+        });
+        markAsDoneAllTomorrowTasksImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                markAsDoneAllTheseTasks(tomorrowTasks);
+            }
+        });
+        markAsDoneAllInTheNextSevenDaysTasksImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                markAsDoneAllTheseTasks(inTheNextSevenDaysTasks);
+            }
+        });
+        markAsDoneAllLaterTasksImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                markAsDoneAllTheseTasks(laterTasks);
+            }
+        });
+
         if (MeteorSingleton.getInstance().isLoggedIn()) {
             tags = app.getCurrentUser().getTags();
             fetchTasks(null);
-            displayTasks();
         }
         return myView;
     }
@@ -162,18 +293,16 @@ public class TasksFragment
                 // TODO: Set appBar elevation if scrolled
             }
         });
-
         final List<Tag> tags = app.getCurrentUser().getTags();
 
         tagsFilteringDialog = new MaterialDialog.Builder(getActivity())
-                .title("Tags")
+                .title(R.string.filter_with_tag)
                 .autoDismiss(true)
                 .positiveText(R.string.clear)
                 .onPositive(new MaterialDialog.SingleButtonCallback() {
                     @Override
                     public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                        fetchTasks(null);
-                        displayTasks();
+                        clearCurrentTag();
                     }
                 })
                 .adapter(new TagsListAdapter(
@@ -182,26 +311,123 @@ public class TasksFragment
                         new MaterialDialog.ListCallback() {
                             @Override
                             public void onSelection(MaterialDialog dialog, View itemView, int which, CharSequence text) {
-                                Log.d("TasksFragment", "onSelection (line 164): Write a log message" + which);
                             }
                         })
                 .build();
         ListView list = tagsFilteringDialog.getListView();
         list.setOnItemClickListener(this);
 
+        // Overdue Tasks
         overdueTasksRecyclerView = (RecyclerView) view.findViewById(R.id.overdueTasksRecyclerView);
+        overdueTasksLayoutManager = new CustomLinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false);
+        overdueTasksRecyclerViewTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
+        overdueTasksRecyclerViewTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
+        overdueTasksRecyclerViewTouchActionGuardManager.setEnabled(true);
+        overdueTasksRecyclerViewSwipeManager = new RecyclerViewSwipeManager();
+        overdueTasksItemAdapter = new SwipeableTaskAdapter(overdueTasks);
+        overdueTasksItemAdapter.setEventListener(new TaskEventsListener(overdueTasks));
+        overdueTasksWrappedAdapter = overdueTasksRecyclerViewSwipeManager.createWrappedAdapter(overdueTasksItemAdapter);
+        overdueTasksAnimator = new SwipeDismissItemAnimator();
+        overdueTasksAnimator.setSupportsChangeAnimations(false);
+        overdueTasksRecyclerView.setLayoutManager(overdueTasksLayoutManager);
+        overdueTasksRecyclerView.setAdapter(overdueTasksWrappedAdapter);
+        overdueTasksRecyclerView.setItemAnimator(overdueTasksAnimator);
+        if (!supportsViewElevation()) {
+            overdueTasksRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
+        }
+        overdueTasksRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
+        overdueTasksRecyclerViewTouchActionGuardManager.attachRecyclerView(overdueTasksRecyclerView);
+        overdueTasksRecyclerViewSwipeManager.attachRecyclerView(overdueTasksRecyclerView);
+
+        // Today Tasks
         todayTasksRecyclerView = (RecyclerView) view.findViewById(R.id.todayTasksRecyclerView);
+        todayTasksLayoutManager = new CustomLinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false);
+        todayTasksRecyclerViewTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
+        todayTasksRecyclerViewTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
+        todayTasksRecyclerViewTouchActionGuardManager.setEnabled(true);
+        todayTasksRecyclerViewSwipeManager = new RecyclerViewSwipeManager();
+        todayTasksItemAdapter = new SwipeableTaskAdapter(todayTasks);
+        todayTasksItemAdapter.setEventListener(new TaskEventsListener(todayTasks));
+        todayTasksWrappedAdapter = todayTasksRecyclerViewSwipeManager.createWrappedAdapter(todayTasksItemAdapter);
+        todayTasksAnimator = new SwipeDismissItemAnimator();
+        todayTasksAnimator.setSupportsChangeAnimations(false);
+        todayTasksRecyclerView.setLayoutManager(todayTasksLayoutManager);
+        todayTasksRecyclerView.setAdapter(todayTasksWrappedAdapter);
+        todayTasksRecyclerView.setItemAnimator(todayTasksAnimator);
+        if (!supportsViewElevation()) {
+            todayTasksRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
+        }
+        todayTasksRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
+        todayTasksRecyclerViewTouchActionGuardManager.attachRecyclerView(todayTasksRecyclerView);
+        todayTasksRecyclerViewSwipeManager.attachRecyclerView(todayTasksRecyclerView);
+
+        // Tomorrow Tasks
         tomorrowTasksRecyclerView = (RecyclerView) view.findViewById(R.id.tomorrowTasksRecyclerView);
+        tomorrowTasksLayoutManager = new CustomLinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false);
+        tomorrowTasksRecyclerViewTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
+        tomorrowTasksRecyclerViewTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
+        tomorrowTasksRecyclerViewTouchActionGuardManager.setEnabled(true);
+        tomorrowTasksRecyclerViewSwipeManager = new RecyclerViewSwipeManager();
+        tomorrowTasksItemAdapter = new SwipeableTaskAdapter(tomorrowTasks);
+        tomorrowTasksItemAdapter.setEventListener(new TaskEventsListener(tomorrowTasks));
+        tomorrowTasksWrappedAdapter = tomorrowTasksRecyclerViewSwipeManager.createWrappedAdapter(tomorrowTasksItemAdapter);
+        tomorrowTasksAnimator = new SwipeDismissItemAnimator();
+        tomorrowTasksAnimator.setSupportsChangeAnimations(false);
+        tomorrowTasksRecyclerView.setLayoutManager(tomorrowTasksLayoutManager);
+        tomorrowTasksRecyclerView.setAdapter(tomorrowTasksWrappedAdapter);
+        tomorrowTasksRecyclerView.setItemAnimator(tomorrowTasksAnimator);
+        if (!supportsViewElevation()) {
+            tomorrowTasksRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
+        }
+        tomorrowTasksRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
+        tomorrowTasksRecyclerViewTouchActionGuardManager.attachRecyclerView(tomorrowTasksRecyclerView);
+        tomorrowTasksRecyclerViewSwipeManager.attachRecyclerView(tomorrowTasksRecyclerView);
+
+        // InTheNextSevenDays Tasks
         inTheNextSevenDaysTasksRecyclerView = (RecyclerView) view.findViewById(R.id.inTheNextSevenDaysTasksRecyclerView);
+        inTheNextSevenDaysTasksLayoutManager = new CustomLinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false);
+        inTheNextSevenDaysTasksRecyclerViewTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
+        inTheNextSevenDaysTasksRecyclerViewTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
+        inTheNextSevenDaysTasksRecyclerViewTouchActionGuardManager.setEnabled(true);
+        inTheNextSevenDaysTasksRecyclerViewSwipeManager = new RecyclerViewSwipeManager();
+        inTheNextSevenDaysTasksItemAdapter = new SwipeableTaskAdapter(inTheNextSevenDaysTasks);
+        inTheNextSevenDaysTasksItemAdapter.setEventListener(new TaskEventsListener(inTheNextSevenDaysTasks));
+        inTheNextSevenDaysTasksWrappedAdapter = inTheNextSevenDaysTasksRecyclerViewSwipeManager.createWrappedAdapter(inTheNextSevenDaysTasksItemAdapter);
+        inTheNextSevenDaysTasksAnimator = new SwipeDismissItemAnimator();
+        inTheNextSevenDaysTasksAnimator.setSupportsChangeAnimations(false);
+        inTheNextSevenDaysTasksRecyclerView.setLayoutManager(inTheNextSevenDaysTasksLayoutManager);
+        inTheNextSevenDaysTasksRecyclerView.setAdapter(inTheNextSevenDaysTasksWrappedAdapter);
+        inTheNextSevenDaysTasksRecyclerView.setItemAnimator(inTheNextSevenDaysTasksAnimator);
+        if (!supportsViewElevation()) {
+            inTheNextSevenDaysTasksRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
+        }
+        inTheNextSevenDaysTasksRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
+        inTheNextSevenDaysTasksRecyclerViewTouchActionGuardManager.attachRecyclerView(inTheNextSevenDaysTasksRecyclerView);
+        inTheNextSevenDaysTasksRecyclerViewSwipeManager.attachRecyclerView(inTheNextSevenDaysTasksRecyclerView);
+
+        // Later Tasks
         laterTasksRecyclerView = (RecyclerView) view.findViewById(R.id.laterTasksRecyclerView);
+        laterTasksLayoutManager = new CustomLinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false);
+        laterTasksRecyclerViewTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
+        laterTasksRecyclerViewTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
+        laterTasksRecyclerViewTouchActionGuardManager.setEnabled(true);
+        laterTasksRecyclerViewSwipeManager = new RecyclerViewSwipeManager();
+        laterTasksItemAdapter = new SwipeableTaskAdapter(laterTasks);
+        laterTasksItemAdapter.setEventListener(new TaskEventsListener(laterTasks));
+        laterTasksWrappedAdapter = laterTasksRecyclerViewSwipeManager.createWrappedAdapter(laterTasksItemAdapter);
+        laterTasksAnimator = new SwipeDismissItemAnimator();
+        laterTasksAnimator.setSupportsChangeAnimations(false);
+        laterTasksRecyclerView.setLayoutManager(laterTasksLayoutManager);
+        laterTasksRecyclerView.setAdapter(laterTasksWrappedAdapter);
+        laterTasksRecyclerView.setItemAnimator(laterTasksAnimator);
+        if (!supportsViewElevation()) {
+            laterTasksRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
+        }
+        laterTasksRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
+        laterTasksRecyclerViewTouchActionGuardManager.attachRecyclerView(laterTasksRecyclerView);
+        laterTasksRecyclerViewSwipeManager.attachRecyclerView(laterTasksRecyclerView);
 
-
-        // Setup TasksGroups
-        setupTasksRecyclerView(overdueTasks, overdueTasksRecyclerView);
-        setupTasksRecyclerView(todayTasks, todayTasksRecyclerView);
-        setupTasksRecyclerView(tomorrowTasks, tomorrowTasksRecyclerView);
-        setupTasksRecyclerView(inTheNextSevenDaysTasks, inTheNextSevenDaysTasksRecyclerView);
-        setupTasksRecyclerView(laterTasks, laterTasksRecyclerView);
+        displayTasks();
 
         // Setup TaskAdder
         newTaskClearButton = (ImageView) view.findViewById(R.id.newTaskClearButton);
@@ -258,60 +484,6 @@ public class TasksFragment
         });
     }
 
-    private void setupTasksRecyclerView(final ArrayList<Task> tasks, RecyclerView  mRecyclerView) {
-        if (tasks.size() == 0) {
-            return;
-        }
-
-        CustomLinearLayoutManager mLayoutManager;
-        RecyclerViewSwipeManager mRecyclerViewSwipeManager;
-        RecyclerViewTouchActionGuardManager mRecyclerViewTouchActionGuardManager;
-
-        mLayoutManager = new CustomLinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false);
-
-        mRecyclerViewTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
-        mRecyclerViewTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
-        mRecyclerViewTouchActionGuardManager.setEnabled(true);
-
-        mRecyclerViewSwipeManager = new RecyclerViewSwipeManager();
-
-        final SwipeableTaskAdapter myItemAdapter = new SwipeableTaskAdapter(tasks);
-        myItemAdapter.setEventListener(new SwipeableTaskAdapter.EventListener() {
-            @Override
-            public void onItemRemoved(int position) {
-                Task task = tasks.get(position);
-                Log.d("ToggleDone", task.toString());
-                task.toggleDoneServer();
-            }
-
-            @Override
-            public void onItemPinned(int position) {
-                Log.d("Pinned", position + "");
-            }
-
-            @Override
-            public void onItemViewClicked(View v, boolean pinned) {
-                Log.d("Clicekd", v.toString());
-            }
-        });
-
-        RecyclerView.Adapter mWrappedAdapter = mRecyclerViewSwipeManager.createWrappedAdapter(myItemAdapter);
-
-        final GeneralItemAnimator animator = new SwipeDismissItemAnimator();
-        animator.setSupportsChangeAnimations(false);
-
-        mRecyclerView.setLayoutManager(mLayoutManager);
-        mRecyclerView.setAdapter(mWrappedAdapter);
-        mRecyclerView.setItemAnimator(animator);
-
-        if (!supportsViewElevation()) {
-            mRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
-        }
-        mRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
-        mRecyclerViewTouchActionGuardManager.attachRecyclerView(mRecyclerView);
-        mRecyclerViewSwipeManager.attachRecyclerView(mRecyclerView);
-    }
-
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -319,6 +491,9 @@ public class TasksFragment
             Main = (OnFragmentInteractionListener) context;
         } catch (ClassCastException e) {
             throw new ClassCastException(context.toString() + " must implement onSomeEventListener");
+        }
+        if (context instanceof MainActivity){
+            mainActivity = (MainActivity) context;
         }
     }
 
@@ -330,12 +505,8 @@ public class TasksFragment
     @Override
     public void onClick(View v) {
         int key = Integer.valueOf(v.getTag().toString());
-        Log.d("TasksFragment", "onClick (line 309): " + tags.get(key).getHashName());
         tagsFilteringDialog.dismiss();
-        Log.d("TasksFragment", "onClick (line 319): tag" + tags.get(key).toString());
-        fetchTasks(tags.get(key));
-        Log.d("TasksFragment", "onClick (line 321): Write a log messageauui" + overdueTasks.toString());
-        displayTasks();
+        setCurrentTag(tags.get(key));
     }
 
     @Override
@@ -349,47 +520,23 @@ public class TasksFragment
 
     // Data
     private void fetchTasks(Tag tag) {
-        List<Task> tasks;
-        if (tag == null) {
-            tasks = app.getCurrentUser().getTasks();
-        } else {
-            tasks = app.getCurrentUser().getTasksByTag(tag);
-            Log.d("TasksFragment", "fetchTasks (line 341): Write a log message" + tasks.toString());
-        }
-
-        Calendar dueDate = Calendar.getInstance();
-        Calendar today = Calendar.getInstance();
-        Calendar tomorrow = Calendar.getInstance();
-        Calendar inTheNextSevenDaysStart = Calendar.getInstance();
-        Calendar inTheNextSevenDaysEnd = Calendar.getInstance();
-        Tools.setStartOfDay(today);
-        tomorrow.add(Calendar.DAY_OF_MONTH, 1);
-        inTheNextSevenDaysStart.add(Calendar.DAY_OF_MONTH, 2);
-        inTheNextSevenDaysEnd.add(Calendar.DAY_OF_MONTH, 9);
-        Tools.setStartOfDay(inTheNextSevenDaysStart);
-        Tools.setStartOfDay(inTheNextSevenDaysEnd);
-
         overdueTasks.clear();
         todayTasks.clear();
         tomorrowTasks.clear();
         inTheNextSevenDaysTasks.clear();
         laterTasks.clear();
 
-        for (Task task : tasks) {
-            dueDate.setTime(task.getDueDate());
+        User user = app.getCurrentUser();
 
-            if (today.after(dueDate)) {
-                overdueTasks.add(task);
-            } else if (today.get(Calendar.DAY_OF_MONTH) == dueDate.get(Calendar.DAY_OF_MONTH)) {
-                todayTasks.add(task);
-            } else if (tomorrow.get(Calendar.DAY_OF_MONTH) == dueDate.get(Calendar.DAY_OF_MONTH)) {
-                tomorrowTasks.add(task);
-            } else if (inTheNextSevenDaysStart.before(dueDate) && inTheNextSevenDaysEnd.after(dueDate)) {
-                inTheNextSevenDaysTasks.add(task);
-            } else {
-                laterTasks.add(task);
-            }
+        if (user == null) {
+            return;
         }
+
+        overdueTasks.addAll(user.getOverdueTasks(tag));
+        todayTasks.addAll(user.getTodayTasks(tag));
+        tomorrowTasks.addAll(user.getTomorrowTasks(tag));
+        inTheNextSevenDaysTasks.addAll(user.getInTheNextSevenDaysTasks(tag));
+        laterTasks.addAll(user.getLaterTasks(tag));
     }
 
     private void insertTask() {
@@ -397,17 +544,27 @@ public class TasksFragment
         MeteorSingleton.getInstance().insert("Tasks", newTask.getObject(), new ResultListener() {
             @Override
             public void onSuccess(String result) {
-                Log.d("auie", "Succes");
+                showSnack(String.format("'%s' added", newTask.getTitle()));
+                destroyPreviewTask();
             }
 
             @Override
             public void onError(String error, String reason, String details) {
-                Log.d("Error", error);
-                Log.d("Error", reason);
+                showSnack("Error adding the task. Try again");
             }
         });
-        Log.d("NT: ", newTask.getObject().toString());
-        destroyPreviewTask();
+    }
+
+    private void postponeAllTheseTasks(List<Task> tasks) {
+        for (Task task : tasks) {
+            task.postponeToNextDayServer();
+        }
+    }
+
+    private void markAsDoneAllTheseTasks(List<Task> tasks) {
+        for (Task task : tasks) {
+            task.markAsDoneServer();
+        }
     }
 
     // Display
@@ -444,6 +601,83 @@ public class TasksFragment
         } else {
             laterTasksLayout.setVisibility(View.GONE);
         }
+
+        overdueTasksWrappedAdapter.notifyDataSetChanged();
+        overdueTasksItemAdapter.notifyDataSetChanged();
+        todayTasksWrappedAdapter.notifyDataSetChanged();
+        todayTasksItemAdapter.notifyDataSetChanged();
+        tomorrowTasksWrappedAdapter.notifyDataSetChanged();
+        tomorrowTasksItemAdapter.notifyDataSetChanged();
+        inTheNextSevenDaysTasksWrappedAdapter.notifyDataSetChanged();
+        inTheNextSevenDaysTasksItemAdapter.notifyDataSetChanged();
+        laterTasksWrappedAdapter.notifyDataSetChanged();
+        laterTasksItemAdapter.notifyDataSetChanged();
+
+        //WrapperAdapterUtils.releaseAll(todayTasksWrappedAdapter);
+        //todayTasksRecyclerViewSwipeManager.release();
+        //todayTasksItemAdapter = new SwipeableTaskAdapter(todayTasks);
+        //todayTasksWrappedAdapter = todayTasksRecyclerViewSwipeManager.createWrappedAdapter(todayTasksItemAdapter);
+        //todayTasksRecyclerView.swapAdapter(todayTasksWrappedAdapter, false);
+        //Log.d("TasksFragment@603", todayTasks.toString());
+    }
+
+    public void reRenderTasks() {
+        fetchTasks(currentTag);
+        displayTasks();
+    }
+
+    public void setCurrentTag(Tag tag) {
+        currentTag = tag;
+        fetchTasks(currentTag);
+        displayTasks();
+
+        if (tag == null) {
+            return;
+        }
+
+        currentTagChipLayout.setVisibility(View.VISIBLE);
+        currentTagChipLabel.setText(currentTag.getHashName());
+        IconicsDrawable tagIcon = new IconicsDrawable(getContext()).sizeDp(13).color(Color.WHITE);
+        int hintColor = getContext().getResources().getColor(R.color.colorHintText);
+
+        if (tag.getColor() != null) {
+            currentTagChipIcon.setBackgroundDrawable(Graphics.createRoundDrawable(tag.getColor()));
+        } else {
+            currentTagChipIcon.setBackgroundDrawable(
+                    Graphics.createRoundDrawable(Graphics.intColorToHex(hintColor))
+            );
+        }
+
+        if (tag.getIcon() != null) {
+            try {
+                tagIcon.icon(GoogleMaterial.Icon.valueOf("gmd_" + tag.getIcon()));
+            } catch (Exception e ) {
+                tagIcon.icon(GoogleMaterial.Icon.gmd_label_outline);
+            }
+        } else {
+            tagIcon.icon(GoogleMaterial.Icon.gmd_label_outline);
+        }
+
+        currentTagChipIcon.setImageDrawable(tagIcon);
+
+        currentTagChipIconDelete.setBackgroundDrawable(Graphics.createRoundDrawable("#8C000000"));
+        currentTagChipIconDelete.setImageDrawable(
+                new IconicsDrawable(getContext()).icon(GoogleMaterial.Icon.gmd_clear)
+                    .sizeDp(9)
+                    .color(Color.parseColor("#D4D4D4"))
+        );
+        currentTagChipIconDelete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                clearCurrentTag();
+            }
+        });
+        
+    }
+
+    public void clearCurrentTag() {
+        currentTagChipLayout.setVisibility(View.GONE);
+        setCurrentTag(null);
     }
 
     private void renderPreviewTask() {
@@ -455,17 +689,29 @@ public class TasksFragment
     }
 
     private void destroyPreviewTask() {
-        newTask = new Task();
-        previewTaskLayout.setVisibility(View.GONE);
-        taskAdderSendButton.setColorFilter(getResources().getColor(R.color.colorHintTextNonFaded), PorterDuff.Mode.SRC_IN);
-        taskPrimaryText.setText("");
-        taskSecondaryText.setText(new Date().toLocaleString());
+        if (isAdded()) {
+            Tools.hideKeyboard(mainActivity);
+            newTask = new Task();
+            previewTaskLayout.setVisibility(View.GONE);
+            taskAdderSendButton.setColorFilter(getResources().getColor(R.color.colorHintTextNonFaded), PorterDuff.Mode.SRC_IN);
+            taskPrimaryText.setText("");
+            taskAdderInput.setText("");
+            taskSecondaryText.setText(new Date().toLocaleString());
+            getActivity().getWindow().setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
+            );
+        }
     }
 
     public void showTagsFilteringDialog() {
         tagsFilteringDialog.show();
     }
 
+    public void showSnack(String text) {
+        Log.d("TasksFragment", "showSnack (line 599): Write a log message" + text);
+        Snackbar.make(tasksCoordinatorLayout, text, Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show();
+    }
 
     private boolean supportsViewElevation() {
         return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
