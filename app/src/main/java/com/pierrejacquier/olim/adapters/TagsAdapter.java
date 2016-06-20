@@ -17,8 +17,6 @@ import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.helpers.Graphics;
 
-import im.delight.android.ddp.MeteorSingleton;
-
 public class TagsAdapter extends
         RecyclerView.Adapter<TagsAdapter.ViewHolder> {
 

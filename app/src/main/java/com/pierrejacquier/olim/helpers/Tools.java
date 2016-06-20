@@ -12,20 +12,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 
-import im.delight.android.ddp.db.Document;
-
 public final class Tools {
-
-    public static HashMap<String, Object> getMap(Document doc) {
-        HashMap<String, Object> obj = new HashMap<>();
-        if(doc != null) {
-            for (String f : doc.getFieldNames()) {
-                obj.put(f, doc.getField(f));
-            }
-            obj.put("_id", doc.getId());
-        }
-        return obj;
-    }
 
     public static HashMap<String, Object> getMap(Object doc) {
         HashMap<String, Object> obj = new HashMap<>();

@@ -68,10 +68,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import im.delight.android.ddp.MeteorSingleton;
-import im.delight.android.ddp.ResultListener;
-import im.delight.android.ddp.db.Document;
-
 public class TasksFragment
         extends Fragment
         implements View.OnClickListener, AdapterView.OnItemClickListener {
@@ -177,14 +173,14 @@ public class TasksFragment
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = (Olim) getActivity().getApplicationContext();
-        if (MeteorSingleton.getInstance().isLoggedIn()) {
+        /*if (MeteorSingleton.getInstance().isLoggedIn()) {
             Document userDoc = MeteorSingleton.getInstance().getDatabase()
                                 .getCollection("users")
                                 .getDocument(MeteorSingleton.getInstance().getUserId());
             if (userDoc != null) {
                 app.setCurrentUser(new User(userDoc));
             }
-        }
+        }*/
     }
 
     @Override
@@ -276,10 +272,9 @@ public class TasksFragment
             }
         });
 
-        if (MeteorSingleton.getInstance().isLoggedIn()) {
-            tags = app.getCurrentUser().getTags();
-            fetchTasks(null);
-        }
+        tags = app.getCurrentUser().getTags();
+        fetchTasks(null);
+
         return myView;
     }
 
@@ -295,6 +290,7 @@ public class TasksFragment
         });
         final List<Tag> tags = app.getCurrentUser().getTags();
 
+        /*
         tagsFilteringDialog = new MaterialDialog.Builder(getActivity())
                 .title(R.string.filter_with_tag)
                 .autoDismiss(true)
@@ -314,8 +310,9 @@ public class TasksFragment
                             }
                         })
                 .build();
+
         ListView list = tagsFilteringDialog.getListView();
-        list.setOnItemClickListener(this);
+        list.setOnItemClickListener(this);*/
 
         // Overdue Tasks
         overdueTasksRecyclerView = (RecyclerView) view.findViewById(R.id.overdueTasksRecyclerView);
@@ -540,8 +537,7 @@ public class TasksFragment
     }
 
     private void insertTask() {
-        newTask.setCreatedAt(new Date());
-        MeteorSingleton.getInstance().insert("Tasks", newTask.getObject(), new ResultListener() {
+        /*MeteorSingleton.getInstance().insert("Tasks", newTask.getObject(), new ResultListener() {
             @Override
             public void onSuccess(String result) {
                 showSnack(String.format("'%s' added", newTask.getTitle()));
@@ -552,18 +548,18 @@ public class TasksFragment
             public void onError(String error, String reason, String details) {
                 showSnack("Error adding the task. Try again");
             }
-        });
+        });*/
     }
 
     private void postponeAllTheseTasks(List<Task> tasks) {
         for (Task task : tasks) {
-            task.postponeToNextDayServer();
+            //task.postponeToNextDayServer();
         }
     }
 
     private void markAsDoneAllTheseTasks(List<Task> tasks) {
         for (Task task : tasks) {
-            task.markAsDoneServer();
+            //task.markAsDoneServer();
         }
     }
 
@@ -681,7 +677,6 @@ public class TasksFragment
     }
 
     private void renderPreviewTask() {
-        newTask.setOwner(MeteorSingleton.getInstance().getUserId());
         previewTaskLayout.setVisibility(View.VISIBLE);
         taskAdderSendButton.setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.SRC_IN);
         taskPrimaryText.setText(newTask.getTitle());

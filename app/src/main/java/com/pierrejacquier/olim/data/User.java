@@ -1,52 +1,36 @@
 package com.pierrejacquier.olim.data;
 
-import android.support.annotation.NonNull;
-import android.util.Log;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-
-import im.delight.android.ddp.MeteorSingleton;
-import im.delight.android.ddp.db.Document;
-import im.delight.android.ddp.db.Query;
-
 import com.pierrejacquier.olim.helpers.Tools;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+
 public class User {
-    private String id;
-    private String username;
     private String fullName;
     private String email;
+    private List<Task> tasks;
+    private List<Tag> tags;
 
-    public User(Document userDoc) {
-        HashMap<String, Object> user = Tools.getMap(userDoc);
-        ArrayList<Object> emails = (ArrayList<Object>) user.get("emails");
-        HashMap<String, Object> profile = (HashMap<String, Object>) Tools.getObject(user, "profile", true);
-        HashMap<String, Object> email = (HashMap<String, Object>) emails.get(0);
-
-        this.id = Tools.getString(user, "_id");
-        this.username = Tools.getString(user, "username");
-        this.fullName = Tools.getString(profile, "fullName");
-        this.email = Tools.getString(email, "address");
+    public User() {
+        User(null, null, new ArrayList<Task>(), new ArrayList<Tag>());
     }
 
-    public String getUsername() {
-        return username;
+    public User(String fullName, String email) {
+        User(fullName, email, new ArrayList<Task>(), new ArrayList<Tag>());
     }
 
-    public String getId() {
-        return id;
+    public User(String fullName, String email, List<Task> tasks, List<Tag> tags) {
+        User(fullName, email, tasks, tags);
+    }
+
+    private void User(String fullName, String email, List<Task> tasks, List<Tag> tags) {
+        this.fullName = fullName;
+        this.email = email;
+        this.tasks = tasks;
+        this.tags = tags;
     }
 
     public String getFullName() {
@@ -58,22 +42,18 @@ public class User {
     }
 
     public List<Tag> getTags() {
+        /*
         List <Tag> tags = new ArrayList<>();
-
-        if (this.getId() == null) {
-            return tags;
-        }
 
         Document[] tagsDocs = MeteorSingleton.getInstance()
                 .getDatabase()
                 .getCollection("Tags")
-                .whereEqual("owner", this.getId())
                 .find();
         for (Document tag : tagsDocs) {
             tags.add(new Tag(tag));
         }
-
-        return tags;
+*/
+        return this.tags;
     }
 
     public List<Task> getTasks() {
@@ -91,14 +71,9 @@ public class User {
     public List<Task> getTasks(Tag tag, boolean excludeDone) {
         List <Task> tasks = new ArrayList<>();
 
-        if (this.getId() == null) {
-            return tasks;
-        }
-
-        Query tasksQuery = MeteorSingleton.getInstance()
+        /*Query tasksQuery = MeteorSingleton.getInstance()
                 .getDatabase()
-                .getCollection("Tasks")
-                .whereEqual("owner", this.getId());
+                .getCollection("Tasks");
 
         if (tag != null) {
             tasksQuery.whereEqual("tag", tag.getId());
@@ -111,7 +86,7 @@ public class User {
         Document[] tasksDocs = tasksQuery.find();
 
         for (Document task : tasksDocs) {
-            tasks.add(new Task(task));
+            tasks.add(new Task());
         }
 
         Collections.sort(tasks, new Comparator<Task>() {
@@ -120,9 +95,9 @@ public class User {
             public int compare(Task task2, Task task1) {
                 return task2.getDueDate().compareTo(task1.getDueDate());
             }
-        });
+        });*/
 
-        return tasks;
+        return this.tasks;
     }
 
     public List<Task> getOverdueTasks() {

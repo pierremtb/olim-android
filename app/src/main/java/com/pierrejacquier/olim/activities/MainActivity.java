@@ -3,16 +3,11 @@ package com.pierrejacquier.olim.activities;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.ActionBar;
 import android.util.Log;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -24,33 +19,39 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.athingunique.ddbs.DriveSyncController;
+import com.github.athingunique.ddbs.NewerDatabaseCallback;
+
 import com.afollestad.materialdialogs.MaterialDialog;
-import im.delight.android.ddp.Meteor;
-import im.delight.android.ddp.MeteorCallback;
-import im.delight.android.ddp.MeteorSingleton;
-import im.delight.android.ddp.SubscribeListener;
-import im.delight.android.ddp.db.memory.InMemoryDatabase;
 
 import com.mikepenz.iconics.context.IconicsContextWrapper;
-import com.mikepenz.iconics.context.IconicsLayoutInflater;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.Olim;
+import com.pierrejacquier.olim.data.DbHelper;
+import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.data.User;
 import com.pierrejacquier.olim.fragments.LoadingFragment;
 import com.pierrejacquier.olim.fragments.TagsFragment;
 import com.pierrejacquier.olim.fragments.TasksFragment;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.drive.Drive;
+
+import java.util.Date;
+
 public class MainActivity
         extends AppCompatActivity
-        implements MeteorCallback,
+        implements NewerDatabaseCallback,
+            //GoogleApiClient.ConnectionCallbacks,
+            //OnConnectionFailedListener,
             NavigationView.OnNavigationItemSelectedListener,
             TasksFragment.OnFragmentInteractionListener,
             TagsFragment.OnFragmentInteractionListener {
 
     Olim app;
-    private Meteor meteor;
-    private boolean subscribed = false;
+    //private GoogleApiClient mGoogleApiClient;
+    private static final int RESOLVE_CONNECTION_REQUEST_CODE = 1;
     public static MaterialDialog loadingDialog;
     public static ActionBar actionBar;
     private static final int REQUEST_LOGIN = 0;
@@ -58,12 +59,44 @@ public class MainActivity
     private MenuItem filterMenu;
     private Menu actionsMenu;
     private final int FILTER_MENU_POSITION = 1;
+    private DbHelper dbHelper;
+    private DriveSyncController syncController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         app = (Olim) getApplicationContext();
+
+        // Init the SQLiteOpenHelper
+        dbHelper = new DbHelper(this);
+
+        // Init the ddbs DriveSyncController
+        syncController = DriveSyncController.get(this, dbHelper, this).setDebug(true);
+
+        // Playing
+        dbHelper.clearDatabase();
+        Tag tag = new Tag();
+        tag.setName("MyTag");
+        tag.setComments("Hey my dear tag.");
+        tag.setColor("#E91E63");
+        tag.setIcon("add");
+        dbHelper.putTagInDatabase(tag);
+        Task task = new Task();
+        task.setTitle("HeyMyTag");
+        task.setTagId(1);
+        task.setDueDate(new Date());
+        task.setDone(false);
+        dbHelper.putTaskInDatabase(task);
+        task = new Task();
+        task.setTitle("Random");
+        task.setDueDate(new Date());
+        task.setDone(false);
+        dbHelper.putTaskInDatabase(task);
+        Log.d("MainActivity@76", dbHelper.getTasksFromDatabase().toString());
+        Log.d("MainActivity@76", dbHelper.getTagsFromDatabase().toString());
+        dbHelper.clearDatabase();
+        app.setCurrentUser(new User("Pierre Jacquier", "pierrejacquier39@gmail.com", dbHelper.getTasksFromDatabase(), null));
 
         // Layout stuff
         setContentView(R.layout.activity_main);
@@ -80,21 +113,27 @@ public class MainActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        // Start Meteor connection
-        try {
-            //meteor = MeteorSingleton.createInstance(this, "ws://olim.herokuapp.com/websocket", new InMemoryDatabase());
-            meteor = MeteorSingleton.createInstance(this, "ws://192.168.0.103:3000/websocket", new InMemoryDatabase());
-            meteor.addCallback(this);
-            meteor.connect();
-
-            /*loadingDialog = new MaterialDialog.Builder(this)
-                    .content(R.string.please_wait)
-                    .progress(true, 0)
-                    .show();*/
-            showLoadingFragment();
-        } catch (Exception e) {
-            getTasksFragment().showSnack("Failed. Try again");
-        }
+        // Los geht's
+        TextView drawerFullName = (TextView) findViewById(R.id.drawerFullName);
+        TextView drawerEmail = (TextView) findViewById(R.id.drawerEmail);
+        //drawerFullName.setText(app.getCurrentUser().getFullName());
+        //drawerEmail.setText(app.getCurrentUser().getEmail());
+        prepareBoard(false);
+        new android.os.Handler().postDelayed(
+            new Runnable() {
+                public void run() {
+                    syncController.pullDbFromDrive();
+                    new android.os.Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d("MainActivity@129", dbHelper.getTasksFromDatabase().toString());
+                            app.setCurrentUser(new User("Pierre Jacquier", "pierrejacquier39@gmail.com", dbHelper.getTasksFromDatabase(), null));
+                            prepareBoard(false);
+                            showTasksFragment();
+                        }
+                    }, 1000);
+                }
+        }, 3000);
     }
 
     @Override
@@ -153,9 +192,7 @@ public class MainActivity
                 break;
             case R.id.navigation_drawer_signout:
                 if (app.getCurrentUser() != null) {
-                    meteor.logout();
                 }
-                launchLogin();
                 break;
         }
 
@@ -164,6 +201,7 @@ public class MainActivity
         return true;
     }
 
+    /*
     // Meteor methods
 
     @Override
@@ -207,21 +245,25 @@ public class MainActivity
     public void onDataRemoved(String collectionName, String documentID) {
         updateCurrentView(collectionName);
     }
+    */
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(resultCode != RESULT_CANCELED) {
-            if (requestCode == REQUEST_LOGIN) {
+        switch (requestCode) {
+            case REQUEST_LOGIN:
                 prepareBoard(true);
-            }
+                break;
+            case RESOLVE_CONNECTION_REQUEST_CODE:
+                if (resultCode == RESULT_OK) {
+                    //mGoogleApiClient.connect();
+                }
+                break;
+            default: break;
         }
     }
 
     @Override
     public void onDestroy() {
-        MeteorSingleton.getInstance().disconnect();
-        MeteorSingleton.getInstance().removeCallback(this);
-
         super.onDestroy();
     }
 
@@ -267,11 +309,6 @@ public class MainActivity
         return (TasksFragment) getSupportFragmentManager().findFragmentByTag("TasksFragment");
     }
 
-    private void launchLogin() {
-        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
-        startActivityForResult(intent, REQUEST_LOGIN);
-    }
-
     private void launchSettings() {
         Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
         startActivity(intent);
@@ -311,7 +348,7 @@ public class MainActivity
     }
 
     private void prepareBoard(final boolean doGet) {
-        if(true) {
+        /*if(true) {
             meteor.subscribe("all-user-data-tasks-tags", new Object[]{}, new SubscribeListener() {
                 @Override
                 public void onSuccess() {
@@ -326,17 +363,13 @@ public class MainActivity
                     System.out.println(details);
                 }
             });
-        } else {
+        } else {*/
             prepareActionBar();
-            showTagsFragment();
-        }
+            showTasksFragment();
+        //}
     }
 
     private void prepareActionBar() {
-        TextView drawerFullName = (TextView) findViewById(R.id.drawerFullName);
-        TextView drawerEmail = (TextView) findViewById(R.id.drawerEmail);
-        drawerFullName.setText(app.getCurrentUser().getFullName());
-        drawerEmail.setText(app.getCurrentUser().getEmail());
     }
 
     private static void dismissLoadingDialog() {
@@ -347,4 +380,115 @@ public class MainActivity
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(IconicsContextWrapper.wrap(newBase));
     }
+
+    @Override
+    public void driveNewer() {
+        syncController.pullDbFromDrive();
+        toaster("Cloud newer");
+    }
+
+    @Override
+    public void localNewer() {
+        syncController.putDbInDrive();
+        toaster("Local newer");
+    }
+
+    private void toaster(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    /*
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        // create new contents resource
+        Drive.DriveApi.newDriveContents(mGoogleApiClient)
+                .setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
+
+                    private void createFileIfNotExist(final String fileName, final DriveFolder appFolder) {
+                        Query query = new Query.Builder()
+                                .addFilter(Filters.eq(SearchableField.TITLE, fileName))
+                                .build();
+
+                        appFolder.queryChildren(mGoogleApiClient, query)
+                                .setResultCallback(new ResultCallback<DriveApi.MetadataBufferResult>() {
+                                    @Override
+                                    public void onResult(DriveApi.MetadataBufferResult result) {
+                                        boolean exists = false;
+                                        for (Metadata metadata : result.getMetadataBuffer()) {
+                                            exists = true;
+                                        }
+                                        if (!exists) {
+                                            MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+                                                    .setTitle(fileName)
+                                                    .setMimeType("text/json")
+                                                    .build();
+
+                                            appFolder.createFile(mGoogleApiClient, changeSet, null)
+                                                    .setResultCallback(fileCallback);
+                                        }
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void onResult(DriveApi.DriveContentsResult result) {
+                        if (!result.getStatus().isSuccess()) {
+                            Log.d("eaui", "Error while trying to create new file contents");
+                            return;
+                        }
+                        final DriveFolder appFolder = Drive.DriveApi.getAppFolder(mGoogleApiClient);
+                        createFileIfNotExist("tasks.json", appFolder);
+                        createFileIfNotExist("tags.json", appFolder);
+
+                        appFolder.listChildren(mGoogleApiClient).setResultCallback(listCallback);
+                    }
+                });
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        if (connectionResult.hasResolution()) {
+            try {
+                connectionResult.startResolutionForResult(this, RESOLVE_CONNECTION_REQUEST_CODE);
+            } catch (IntentSender.SendIntentException e) {
+                Log.d("MainActivity@368", "ERRRRRRRRRRRRRRRROOR");
+            }
+        } else {
+            GooglePlayServicesUtil.getErrorDialog(connectionResult.getErrorCode(), this, 0).show();
+        }
+    }
+
+
+    final private ResultCallback<DriveFolder.DriveFileResult> fileCallback = new
+            ResultCallback<DriveFolder.DriveFileResult>() {
+                @Override
+                public void onResult(DriveFolder.DriveFileResult result) {
+                    if (!result.getStatus().isSuccess()) {
+                        Log.d("MainActivity@411", "Error while trying to create the file");
+                        return;
+                    }
+                    Log.d("auie", "Created a file in App Folder: "
+                            + result.getDriveFile().getDriveId());
+                }
+            };
+
+    final private ResultCallback<DriveApi.MetadataBufferResult> listCallback = new
+            ResultCallback<DriveApi.MetadataBufferResult>() {
+                @Override
+                public void onResult(DriveApi.MetadataBufferResult result) {
+                    if (!result.getStatus().isSuccess()) {
+                        Log.d("eauie", "Problem while retrieving files");
+                        return;
+                    }
+                    for (Metadata metadata : result.getMetadataBuffer()) {
+                        Log.d("MainActivity@454", metadata.getTitle());
+                    }
+                }
+            };
+            */
 }

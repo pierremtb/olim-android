@@ -36,6 +36,7 @@ import android.widget.TextView;
 
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.iconics.IconicsDrawable;
+import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.SwipeableItemAdapter;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.SwipeableItemConstants;
@@ -45,13 +46,12 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultAct
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultActionRemoveItem;
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractSwipeableItemViewHolder;
 import com.h6ah4i.android.widget.advrecyclerview.utils.RecyclerViewAdapterUtils;
+import com.pierrejacquier.olim.data.DbHelper;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.helpers.Graphics;
 
 import java.util.List;
-
-import im.delight.android.ddp.MeteorSingleton;
 
 public class SwipeableTaskAdapter
         extends RecyclerView.Adapter<SwipeableTaskAdapter.TaskViewHolder>
@@ -165,10 +165,7 @@ public class SwipeableTaskAdapter
         holder.taskPrimaryText.setText(task.getTitle());
         holder.taskSecondaryText.setText(task.getDueDate().toLocaleString());
         if (task.getTag() != null) {
-            Tag tag = new Tag(MeteorSingleton.getInstance()
-                                .getDatabase()
-                                .getCollection("Tags")
-                                .getDocument(task.getTag()));
+            Tag tag = task.getTag();
             if (!task.isDone()) {
                 if (tag.getColor() != null) {
                     holder.taskTag.setBackgroundDrawable(Graphics.createRoundDrawable(tag.getColor()));

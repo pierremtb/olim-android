@@ -18,13 +18,13 @@ public class TaskEventsListener implements SwipeableTaskAdapter.EventListener {
     @Override
     public void onItemRemoved(int position) {
         Task task = tasks.get(position);
-        task.toggleDoneServer();
+        //task.toggleDoneServer();
     }
 
     @Override
     public void onItemPinned(int position) {
         Task task = tasks.get(position);
-        task.postponeToNextDayServer();
+        //task.postponeToNextDayServer();
     }
 
     @Override
