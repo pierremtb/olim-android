@@ -1,32 +1,34 @@
 package com.pierrejacquier.olim.activities;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.ActionBar;
-import android.util.Log;
-import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.athingunique.ddbs.DriveSyncController;
 import com.github.athingunique.ddbs.NewerDatabaseCallback;
-
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import com.mikepenz.iconics.context.IconicsContextWrapper;
-import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.Olim;
+import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.data.DbHelper;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
@@ -34,23 +36,17 @@ import com.pierrejacquier.olim.data.User;
 import com.pierrejacquier.olim.fragments.LoadingFragment;
 import com.pierrejacquier.olim.fragments.TagsFragment;
 import com.pierrejacquier.olim.fragments.TasksFragment;
-
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.drive.Drive;
-
-import java.util.Date;
+import java.util.List;
+import java.util.regex.Pattern;
 
 public class MainActivity
         extends AppCompatActivity
         implements NewerDatabaseCallback,
-            //GoogleApiClient.ConnectionCallbacks,
-            //OnConnectionFailedListener,
             NavigationView.OnNavigationItemSelectedListener,
             TasksFragment.OnFragmentInteractionListener,
             TagsFragment.OnFragmentInteractionListener {
 
     Olim app;
-    //private GoogleApiClient mGoogleApiClient;
     private static final int RESOLVE_CONNECTION_REQUEST_CODE = 1;
     public static MaterialDialog loadingDialog;
     public static ActionBar actionBar;
@@ -62,44 +58,31 @@ public class MainActivity
     private DbHelper dbHelper;
     private DriveSyncController syncController;
 
+    TextView drawerFullName;
+    TextView drawerEmail;
+    NavigationView navView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
         app = (Olim) getApplicationContext();
 
-        // Init the SQLiteOpenHelper
+        // Initiate SQLiteOpenHelper
         dbHelper = new DbHelper(this);
 
-        // Init the ddbs DriveSyncController
+        // Initiate DriveSyncController
         syncController = DriveSyncController.get(this, dbHelper, this).setDebug(true);
 
-        // Playing
-        dbHelper.clearDatabase();
-        Tag tag = new Tag();
-        tag.setName("MyTag");
-        tag.setComments("Hey my dear tag.");
-        tag.setColor("#E91E63");
-        tag.setIcon("add");
-        dbHelper.putTagInDatabase(tag);
-        Task task = new Task();
-        task.setTitle("HeyMyTag");
-        task.setTagId(1);
-        task.setDueDate(new Date());
-        task.setDone(false);
-        dbHelper.putTaskInDatabase(task);
-        task = new Task();
-        task.setTitle("Random");
-        task.setDueDate(new Date());
-        task.setDone(false);
-        dbHelper.putTaskInDatabase(task);
-        Log.d("MainActivity@76", dbHelper.getTasksFromDatabase().toString());
-        Log.d("MainActivity@76", dbHelper.getTagsFromDatabase().toString());
-        dbHelper.clearDatabase();
-        app.setCurrentUser(new User("Pierre Jacquier", "pierrejacquier39@gmail.com", dbHelper.getTasksFromDatabase(), null));
+        // Set data
+        List<Task> tasks = dbHelper.getTasksFromDatabase();
+        List<Tag> tags = dbHelper.getTagsFromDatabase();
+        String fullName = "User Name";
+        String email = "user@name.do";
+        app.setCurrentUser(new User(fullName, email, tasks, tags));
 
-        // Layout stuff
-        setContentView(R.layout.activity_main);
+        // Do some layout stuff
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         actionBar = getSupportActionBar();
@@ -112,28 +95,13 @@ public class MainActivity
         toggle.syncState();
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
-        // Los geht's
-        TextView drawerFullName = (TextView) findViewById(R.id.drawerFullName);
-        TextView drawerEmail = (TextView) findViewById(R.id.drawerEmail);
-        //drawerFullName.setText(app.getCurrentUser().getFullName());
-        //drawerEmail.setText(app.getCurrentUser().getEmail());
-        prepareBoard(false);
-        new android.os.Handler().postDelayed(
-            new Runnable() {
-                public void run() {
-                    syncController.pullDbFromDrive();
-                    new android.os.Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            Log.d("MainActivity@129", dbHelper.getTasksFromDatabase().toString());
-                            app.setCurrentUser(new User("Pierre Jacquier", "pierrejacquier39@gmail.com", dbHelper.getTasksFromDatabase(), null));
-                            prepareBoard(false);
-                            showTasksFragment();
-                        }
-                    }, 1000);
-                }
-        }, 3000);
+        View header = navigationView.getHeaderView(0);
+        drawerFullName = (TextView) header.findViewById(R.id.drawerFullName);
+        drawerEmail = (TextView) header.findViewById(R.id.drawerEmail);
+        drawerFullName.setText(fullName);
+        drawerEmail.setText(email);
+        prepareMenus();
+        showTasksFragment();
     }
 
     @Override
@@ -201,73 +169,28 @@ public class MainActivity
         return true;
     }
 
-    /*
-    // Meteor methods
-
     @Override
-    public void onConnect(boolean signedInAutomatically) {
-        if (signedInAutomatically && meteor.isLoggedIn()) {
-            app.setCurrentUser(new User(
-                    meteor.getDatabase()
-                            .getCollection("users")
-                            .getDocument(meteor.getUserId())
-                )
-            );
-            prepareBoard(false);
-        } else {
-            launchLogin();
-        }
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(IconicsContextWrapper.wrap(newBase));
     }
 
     @Override
-    public void onDisconnect() {}
-
-    @Override
-    public void onException(Exception e) {}
-
-    @Override
-    public void onDataAdded(String collectionName, String documentID, String newValuesJson) {
-        updateCurrentView(collectionName);
+    public void driveNewer() {
+        syncController.pullDbFromDrive();
+        toaster("Cloud newer");
+        getTasksFragment().endRefreshing();
     }
 
     @Override
-    public void onDataChanged(String collectionName, String documentID, String updatedValuesJson, String removedValuesJson) {
-        updateCurrentView(collectionName);
-        if (collectionName.equals("Tasks")) {
-            Task task = new Task(meteor.getDatabase().getCollection("Tasks").getDocument(documentID));
-            Log.d("MainActivity@198", task.toString());
-            if (currentFragmentName.equals("TasksFragment")) {
-            }
-        }
+    public void localNewer() {
+        syncController.putDbInDrive();
+        toaster("Local newer");
+        getTasksFragment().endRefreshing();
     }
 
-    @Override
-    public void onDataRemoved(String collectionName, String documentID) {
-        updateCurrentView(collectionName);
-    }
-    */
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch (requestCode) {
-            case REQUEST_LOGIN:
-                prepareBoard(true);
-                break;
-            case RESOLVE_CONNECTION_REQUEST_CODE:
-                if (resultCode == RESULT_OK) {
-                    //mGoogleApiClient.connect();
-                }
-                break;
-            default: break;
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
-
-    // Navigation
+    /**
+     * Navigation handling methods
+     */
 
     public void showTasksFragment() {
         Fragment TasksFG = new TasksFragment();
@@ -314,7 +237,9 @@ public class MainActivity
         startActivity(intent);
     }
 
-    // Display
+    /**
+     * Display handling methods
+     */
 
     private void updateCurrentView(String collectionName) {
         if (currentFragmentName == null) {
@@ -339,6 +264,13 @@ public class MainActivity
 
     }
 
+    private void prepareMenus() {
+    }
+
+    private static void dismissLoadingDialog() {
+        loadingDialog.dismiss();
+    }
+
     public void toast(String str) {
         Context context = getApplicationContext();
         CharSequence text = str;
@@ -347,148 +279,44 @@ public class MainActivity
         toast.show();
     }
 
-    private void prepareBoard(final boolean doGet) {
-        /*if(true) {
-            meteor.subscribe("all-user-data-tasks-tags", new Object[]{}, new SubscribeListener() {
-                @Override
-                public void onSuccess() {
-                    subscribed = true;
-                    prepareActionBar();
-                    showTasksFragment();
-                }
-
-                @Override
-                public void onError(String error, String reason, String details) {
-                    toast(error + "-" + reason);
-                    System.out.println(details);
-                }
-            });
-        } else {*/
-            prepareActionBar();
-            showTasksFragment();
-        //}
-    }
-
-    private void prepareActionBar() {
-    }
-
-    private static void dismissLoadingDialog() {
-        loadingDialog.dismiss();
-    }
-
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(IconicsContextWrapper.wrap(newBase));
-    }
-
-    @Override
-    public void driveNewer() {
-        syncController.pullDbFromDrive();
-        toaster("Cloud newer");
-    }
-
-    @Override
-    public void localNewer() {
-        syncController.putDbInDrive();
-        toaster("Local newer");
-    }
-
     private void toaster(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
-    /*
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        // create new contents resource
-        Drive.DriveApi.newDriveContents(mGoogleApiClient)
-                .setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
+    /**
+     * Data handling methods
+     */
 
-                    private void createFileIfNotExist(final String fileName, final DriveFolder appFolder) {
-                        Query query = new Query.Builder()
-                                .addFilter(Filters.eq(SearchableField.TITLE, fileName))
-                                .build();
-
-                        appFolder.queryChildren(mGoogleApiClient, query)
-                                .setResultCallback(new ResultCallback<DriveApi.MetadataBufferResult>() {
-                                    @Override
-                                    public void onResult(DriveApi.MetadataBufferResult result) {
-                                        boolean exists = false;
-                                        for (Metadata metadata : result.getMetadataBuffer()) {
-                                            exists = true;
-                                        }
-                                        if (!exists) {
-                                            MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-                                                    .setTitle(fileName)
-                                                    .setMimeType("text/json")
-                                                    .build();
-
-                                            appFolder.createFile(mGoogleApiClient, changeSet, null)
-                                                    .setResultCallback(fileCallback);
-                                        }
-                                    }
-                                });
-                    }
-
-                    @Override
-                    public void onResult(DriveApi.DriveContentsResult result) {
-                        if (!result.getStatus().isSuccess()) {
-                            Log.d("eaui", "Error while trying to create new file contents");
-                            return;
-                        }
-                        final DriveFolder appFolder = Drive.DriveApi.getAppFolder(mGoogleApiClient);
-                        createFileIfNotExist("tasks.json", appFolder);
-                        createFileIfNotExist("tags.json", appFolder);
-
-                        appFolder.listChildren(mGoogleApiClient).setResultCallback(listCallback);
-                    }
-                });
+    public void insertTask(Task task) {
+        dbHelper.putTaskInDatabase(task);
+        showTasksFragment();
+        updateUserTasks();
     }
 
-    @Override
-    public void onConnectionSuspended(int i) {
-
+    public void setThisTaskStatus(long id, long status) {
+        dbHelper.setThisTaskStatus(id, status);
+        showTasksFragment();
+        updateUserTasks();
     }
 
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        if (connectionResult.hasResolution()) {
-            try {
-                connectionResult.startResolutionForResult(this, RESOLVE_CONNECTION_REQUEST_CODE);
-            } catch (IntentSender.SendIntentException e) {
-                Log.d("MainActivity@368", "ERRRRRRRRRRRRRRRROOR");
+    public void updateUserTasks() {
+        app.getCurrentUser().setTasks(dbHelper.getTasksFromDatabase());
+    }
+
+    public void refreshData() {
+        syncController.isDriveDbNewer();
+    }
+
+    //TODO: find a way to get account info
+    private String getAccountName() {
+        String possibleEmail = null;
+        Pattern emailPattern = Patterns.EMAIL_ADDRESS; // API level 8+
+        Account[] accounts = AccountManager.get(getApplicationContext()).getAccounts();
+        for (Account account : accounts) {
+            if (emailPattern.matcher(account.name).matches()) {
+                possibleEmail = account.name;
             }
-        } else {
-            GooglePlayServicesUtil.getErrorDialog(connectionResult.getErrorCode(), this, 0).show();
         }
+        return possibleEmail;
     }
-
-
-    final private ResultCallback<DriveFolder.DriveFileResult> fileCallback = new
-            ResultCallback<DriveFolder.DriveFileResult>() {
-                @Override
-                public void onResult(DriveFolder.DriveFileResult result) {
-                    if (!result.getStatus().isSuccess()) {
-                        Log.d("MainActivity@411", "Error while trying to create the file");
-                        return;
-                    }
-                    Log.d("auie", "Created a file in App Folder: "
-                            + result.getDriveFile().getDriveId());
-                }
-            };
-
-    final private ResultCallback<DriveApi.MetadataBufferResult> listCallback = new
-            ResultCallback<DriveApi.MetadataBufferResult>() {
-                @Override
-                public void onResult(DriveApi.MetadataBufferResult result) {
-                    if (!result.getStatus().isSuccess()) {
-                        Log.d("eauie", "Problem while retrieving files");
-                        return;
-                    }
-                    for (Metadata metadata : result.getMetadataBuffer()) {
-                        Log.d("MainActivity@454", metadata.getTitle());
-                    }
-                }
-            };
-            */
 }

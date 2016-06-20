@@ -5,7 +5,6 @@ import com.pierrejacquier.olim.helpers.Tools;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
 
 public class User {
@@ -54,6 +53,10 @@ public class User {
         }
 */
         return this.tags;
+    }
+
+    public void setTasks(List<Task> tasks) {
+        this.tasks = tasks;
     }
 
     public List<Task> getTasks() {

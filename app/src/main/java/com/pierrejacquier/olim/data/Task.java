@@ -3,17 +3,14 @@ package com.pierrejacquier.olim.data;
 import android.database.Cursor;
 import android.util.Log;
 
-import com.pierrejacquier.olim.helpers.Tools;
-
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Task {
+    private long id;
     private String title;
     private long tagId;
     private Date dueDate;
@@ -23,6 +20,7 @@ public class Task {
     private Tag tag;
 
     public Task() {
+        this.id = -1;
         this.title = "New task";
         this.tagId = -1;
         this.dueDate = new Date();
@@ -33,12 +31,17 @@ public class Task {
 
     public Task(Cursor cursor) {
         Log.d("Task@31", Arrays.toString(cursor.getColumnNames()));
-        this.title = cursor.getString(0);
-        this.dueDate = new Date(cursor.getLong(1));
-        this.done = cursor.getLong(2) == 1;
-        this.tagId = cursor.getLong(3);
+        this.id = cursor.getLong(0);
+        this.title = cursor.getString(1);
+        this.dueDate = new Date(cursor.getLong(2));
+        this.done = cursor.getLong(3) == 1;
+        this.tagId = cursor.getLong(4);
         this.reminder = null;
         this.tag = null;
+    }
+
+    public long getId() {
+        return id;
     }
 
     public String getTitle() {

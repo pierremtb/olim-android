@@ -4,16 +4,14 @@ package com.pierrejacquier.olim.data;
  * Created by evan on 4/28/15.
  */
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
-import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -21,11 +19,12 @@ import java.util.List;
  */
 public class DbHelper extends SQLiteOpenHelper {
 
-    private static final int DB_VER = 8;
+    private static final int DB_VER = 9;
 
     private static final String DB_NAME = "userData";
     
     private static final String TASKS_TABLE = "tasks";
+    private static final String TASKS_ID_COL = "id";
     private static final String TASKS_TITLE_COL = "title";
     private static final String TASKS_DUE_DATE_COL = "due_date";
     private static final String TASKS_DONE_COL = "done";
@@ -39,6 +38,7 @@ public class DbHelper extends SQLiteOpenHelper {
     private static final String TAGS_ICON_COL = "icon";
 
     private static final String CREATE_TASKS_TABLE = "CREATE TABLE " + TASKS_TABLE + " (" +
+            TASKS_ID_COL +  " INTEGER PRIMARY KEY AUTOINCREMENT," +
             TASKS_TITLE_COL +  " TEXT," +
             TASKS_DUE_DATE_COL +  " INTEGER," +
             TASKS_DONE_COL +  " INTEGER," +
@@ -80,6 +80,13 @@ public class DbHelper extends SQLiteOpenHelper {
         insert.executeInsert();
         insert.clearBindings();
     }
+    
+    public void setThisTaskStatus(long id, long status) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(TASKS_DONE_COL, status);
+        db.update(TASKS_TABLE, cv, "id = " + id, null);
+    }
 
     public void putTagInDatabase(Tag tag) {
         SQLiteDatabase db = getWritableDatabase();
@@ -98,7 +105,7 @@ public class DbHelper extends SQLiteOpenHelper {
 
         Cursor cursor = db.query(
                 TASKS_TABLE,
-                new String[]{TAGS_ID_COL, TASKS_TITLE_COL, TASKS_DUE_DATE_COL, TASKS_DONE_COL, TASKS_TAG_COL},
+                new String[]{TASKS_ID_COL, TASKS_TITLE_COL, TASKS_DUE_DATE_COL, TASKS_DONE_COL, TASKS_TAG_COL},
                 null,
                 null,
                 null,
@@ -144,7 +151,7 @@ public class DbHelper extends SQLiteOpenHelper {
 
         Cursor cursor = db.query(
                 TASKS_TABLE,
-                new String[]{TASKS_TITLE_COL, TASKS_DUE_DATE_COL, TASKS_DONE_COL, TASKS_TAG_COL},
+                new String[]{TASKS_ID_COL, TASKS_TITLE_COL, TASKS_DUE_DATE_COL, TASKS_DONE_COL, TASKS_TAG_COL},
                 null,
                 null,
                 null,
@@ -214,6 +221,11 @@ public class DbHelper extends SQLiteOpenHelper {
                 TASKS_DONE_COL + "," +
                 TASKS_TAG_COL +
             ") VALUES (?,?,?,?);";
+        return db.compileStatement(statement);
+    }
+
+    private SQLiteStatement makeUpdateTaskStatement(SQLiteDatabase db) {
+        String statement =  "UPDATE " + TASKS_TABLE + " SET done = ? WHERE id = ?";
         return db.compileStatement(statement);
     }
 

@@ -2,12 +2,9 @@ package com.pierrejacquier.olim.adapters;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -17,8 +14,6 @@ import com.mikepenz.iconics.IconicsDrawable;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.helpers.Graphics;
-
-import java.util.List;
 
 public class TagsListAdapter extends ArrayAdapter<Tag> {
     private final Context context;

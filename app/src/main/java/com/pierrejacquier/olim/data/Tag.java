@@ -1,7 +1,6 @@
 package com.pierrejacquier.olim.data;
 
 import android.database.Cursor;
-import android.util.Log;
 
 import java.lang.reflect.Field;
 

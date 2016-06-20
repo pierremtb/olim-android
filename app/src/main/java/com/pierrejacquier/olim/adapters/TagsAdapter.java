@@ -9,13 +9,13 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import java.util.List;
-
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.iconics.IconicsDrawable;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.helpers.Graphics;
+
+import java.util.List;
 
 public class TagsAdapter extends
         RecyclerView.Adapter<TagsAdapter.ViewHolder> {
