@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.Intent;
+import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -17,6 +18,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.util.Patterns;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,6 +35,7 @@ import com.pierrejacquier.olim.data.DbHelper;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.data.User;
+import com.pierrejacquier.olim.databinding.NavHeaderMainBinding;
 import com.pierrejacquier.olim.fragments.LoadingFragment;
 import com.pierrejacquier.olim.fragments.TagsFragment;
 import com.pierrejacquier.olim.fragments.TasksFragment;
@@ -76,6 +79,9 @@ public class MainActivity
         syncController = DriveSyncController.get(this, dbHelper, this).setDebug(true);
 
         // Set data
+        dbHelper.clearDatabase();
+        Tag tag = new Tag().withName("First").withComments("Yeah").withColor("#000000").withIcon("add");
+        dbHelper.putTagInDatabase(tag);
         List<Task> tasks = dbHelper.getTasksFromDatabase();
         List<Tag> tags = dbHelper.getTagsFromDatabase();
         String fullName = "User Name";
@@ -95,11 +101,9 @@ public class MainActivity
         toggle.syncState();
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        View header = navigationView.getHeaderView(0);
-        drawerFullName = (TextView) header.findViewById(R.id.drawerFullName);
-        drawerEmail = (TextView) header.findViewById(R.id.drawerEmail);
-        drawerFullName.setText(fullName);
-        drawerEmail.setText(email);
+        NavHeaderMainBinding binding = DataBindingUtil.inflate(getLayoutInflater(), R.layout.nav_header_main, navigationView, false);
+        navigationView.addHeaderView(binding.getRoot());
+        binding.setUser(app.getCurrentUser());
         prepareMenus();
         showTasksFragment();
     }

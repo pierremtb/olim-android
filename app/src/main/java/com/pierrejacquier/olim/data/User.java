@@ -59,6 +59,10 @@ public class User {
         this.tasks = tasks;
     }
 
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
+    }
+
     public List<Task> getTasks() {
         return this.getTasks(null, false);
     }

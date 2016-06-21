@@ -1,7 +1,9 @@
 package com.pierrejacquier.olim.fragments;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.provider.SyncStateContract;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -14,7 +16,9 @@ import android.view.ViewGroup;
 
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
+import com.pierrejacquier.olim.activities.TagActivity;
 import com.pierrejacquier.olim.adapters.TagsAdapter;
+import com.pierrejacquier.olim.data.Tag;
 
 public class TagsFragment extends Fragment implements View.OnClickListener {
 
@@ -38,8 +42,9 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "We can't add tags, yet", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Intent i = new Intent(getActivity(), TagActivity.class);
+                i.putExtra("id", -1);
+                startActivity(i);
             }
         });
         return myView;

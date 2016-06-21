@@ -42,14 +42,25 @@ public class Tag {
     public void setName(String name) {
         this.name = name;
     }
+    
+    public Tag withName(String name) {
+        setName(name);
+        return this;
+    }
 
     public String getComments() {
         return comments;
     }
-
+    
     public void setComments(String comments) {
         this.comments = comments;
     }
+
+    public Tag withComments(String comments) {
+        setComments(comments);
+        return this;
+    }
+
 
     public String getColor() {
         return color;
@@ -59,12 +70,22 @@ public class Tag {
         this.color = color;
     }
 
+    public Tag withColor(String color) {
+        setColor(color);
+        return this;
+    }
+
     public String getIcon() {
         return icon;
     }
 
     public void setIcon(String icon) {
         this.icon = icon;
+    }
+
+    public Tag withIcon(String icon) {
+        setIcon(icon);
+        return this;
     }
 
     public String toString() {

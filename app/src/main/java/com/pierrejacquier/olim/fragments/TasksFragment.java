@@ -6,6 +6,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
@@ -29,8 +30,10 @@ import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
@@ -44,6 +47,7 @@ import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.activities.MainActivity;
 import com.pierrejacquier.olim.adapters.SwipeableTaskAdapter;
+import com.pierrejacquier.olim.adapters.TagsListAdapter;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.data.User;
@@ -295,7 +299,7 @@ public class TasksFragment
         });
         final List<Tag> tags = app.getCurrentUser().getTags();
 
-        /*
+
         tagsFilteringDialog = new MaterialDialog.Builder(getActivity())
                 .title(R.string.filter_with_tag)
                 .autoDismiss(true)
@@ -317,7 +321,7 @@ public class TasksFragment
                 .build();
 
         ListView list = tagsFilteringDialog.getListView();
-        list.setOnItemClickListener(this);*/
+        list.setOnItemClickListener(this);
 
         // Overdue Tasks
         overdueTasksRecyclerView = (RecyclerView) view.findViewById(R.id.overdueTasksRecyclerView);
