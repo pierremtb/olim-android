@@ -1,9 +1,9 @@
 package com.pierrejacquier.olim.fragments;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -11,7 +11,6 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
@@ -37,8 +36,6 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
-import com.h6ah4i.android.widget.advrecyclerview.decoration.ItemShadowDecorator;
-import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.RecyclerViewSwipeManager;
 import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchActionGuardManager;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
@@ -46,6 +43,8 @@ import com.mikepenz.iconics.IconicsDrawable;
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.activities.MainActivity;
+import com.pierrejacquier.olim.activities.TagActivity;
+import com.pierrejacquier.olim.activities.TaskActivity;
 import com.pierrejacquier.olim.adapters.SwipeableTaskAdapter;
 import com.pierrejacquier.olim.adapters.TagsListAdapter;
 import com.pierrejacquier.olim.data.Tag;
@@ -53,6 +52,7 @@ import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.data.User;
 import com.pierrejacquier.olim.helpers.CustomLinearLayoutManager;
 import com.pierrejacquier.olim.helpers.Graphics;
+import com.pierrejacquier.olim.helpers.ItemClickSupport;
 import com.pierrejacquier.olim.helpers.Tools;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
@@ -304,6 +304,7 @@ public class TasksFragment
                 .title(R.string.filter_with_tag)
                 .autoDismiss(true)
                 .positiveText(R.string.clear)
+                .positiveColor(getResources().getColor(R.color.colorPrimary))
                 .onPositive(new MaterialDialog.SingleButtonCallback() {
                     @Override
                     public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
@@ -690,6 +691,18 @@ public class TasksFragment
                 .setAction("Action", null).show();
     }
 
+    /**
+     * Navigation
+     */
+
+    private void launchTagActivity(long id) {
+        Intent intent = new Intent(getActivity(), TaskActivity.class);
+        Bundle b = new Bundle();
+        b.putLong("id", id);
+        intent.putExtras(b);
+        startActivityForResult(intent, 0);
+    }
+
     private boolean supportsViewElevation() {
         return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
     }
@@ -718,8 +731,8 @@ public class TasksFragment
         }
 
         @Override
-        public void onItemViewClicked(View v, boolean pinned) {
-            Main.toast("Clicked");
+        public void onItemViewClicked(View v, boolean pinned, int position) {
+            launchTagActivity(tags.get(position).getId());
         }
     }
 }

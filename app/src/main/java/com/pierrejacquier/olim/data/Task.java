@@ -4,9 +4,12 @@ import android.database.Cursor;
 import android.util.Log;
 
 import java.lang.reflect.Field;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class Task {
@@ -51,6 +54,11 @@ public class Task {
     public void setTitle(String title) {
         this.title = title;
     }
+    
+    public Task withTitle(String title) {
+        setTitle(title);
+        return this;
+    }
 
     public Tag getTag() {
         return tag;
@@ -58,6 +66,12 @@ public class Task {
 
     public void setTag(Tag tag) {
         this.tag = tag;
+    }
+    
+    public Task withTag(Tag tag) {
+        setTag(tag);
+        setTagId(tag.getId());
+        return this;
     }
 
     public long getTagId() {
@@ -72,11 +86,25 @@ public class Task {
         return dueDate;
     }
 
+    public String dispDueDate() {
+        return DateFormat.getInstance().getDateInstance().format(dueDate);
+    }
+
+
+    public String dispDueTime() {
+        return DateFormat.getInstance().getTimeInstance().format(dueDate);
+    }
+
     public void setDueDate(Date dueDate) {
         this.dueDate = dueDate;
     }
     public void setDueDate(long dueDate) {
         setDueDate(new Date(dueDate));
+    }
+
+    public Task withDueDate(Date date) {
+        setDueDate(date);
+        return this;
     }
 
     public boolean isDone() {
@@ -90,12 +118,22 @@ public class Task {
         this.done = done;
     }
 
+    public Task withDone(boolean done) {
+        setDone(done);
+        return this;
+    }
+
     public HashMap<String, Object> getReminder() {
         return reminder;
     }
 
     public void setReminder(HashMap<String, Object> reminder) {
         this.reminder = reminder;
+    }
+
+    public Task withReminder(HashMap<String, Object> reminder) {
+        setReminder(reminder);
+        return this;
     }
 
     public Map<String, Object> getObject() {

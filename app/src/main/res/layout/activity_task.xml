@@ -6,15 +6,15 @@
     <data>
 
         <variable
-            name="tag"
-            type="com.pierrejacquier.olim.data.Tag" />
+            name="task"
+            type="com.pierrejacquier.olim.data.Task" />
     </data>
 
     <android.support.design.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fitsSystemWindows="true"
-        tools:context="com.pierrejacquier.olim.activities.TagActivity">
+        tools:context="com.pierrejacquier.olim.activities.TaskActivity">
 
         <android.support.design.widget.AppBarLayout
             android:id="@+id/app_bar"
@@ -57,23 +57,11 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingBottom="26dp"
+                    android:paddingBottom="36dp"
                     android:paddingLeft="32dp"
                     android:paddingRight="16dp"
                     android:paddingTop="16dp"
                     android:orientation="vertical">
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="left|center_vertical"
-                            android:text="#"
-                            android:textSize="25sp" />
 
                         <android.support.design.widget.TextInputLayout
                             android:id="@+id/lNameLayout"
@@ -86,28 +74,11 @@
                                 android:id="@+id/ltitle"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="@={tag.name}"
+                                android:text="@={task.title}"
                                 android:ems="10"
-                                android:hint="@string/tagName"
+                                android:hint="@string/taskTitle"
                                 android:textSize="35sp" />
                         </android.support.design.widget.TextInputLayout>
-
-                    </LinearLayout>
-
-                    <android.support.design.widget.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="left"
-                        android:layout_marginBottom="10dp">
-
-                        <EditText
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@={tag.comments}"
-                            android:ems="10"
-                            android:hint="@string/tagComments"
-                            android:textSize="18sp" />
-                    </android.support.design.widget.TextInputLayout>
 
                 </LinearLayout>
 
@@ -120,8 +91,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            tools:context="com.pierrejacquier.olim.activities.TagActivity"
-            tools:showIn="@layout/activity_tag">
+            tools:context="com.pierrejacquier.olim.activities.TaskActivity"
+            tools:showIn="@layout/activity_task">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -130,7 +101,7 @@
                 android:layout_height="wrap_content">
 
                 <LinearLayout
-                    android:id="@+id/tagColorChoose"
+                    android:id="@+id/taskDueDateChoose"
                     android:layout_width="match_parent"
                     android:layout_height="72dp"
                     android:paddingLeft="16dp"
@@ -144,7 +115,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
                         app:iiv_color="@color/colorHintText"
-                        app:iiv_icon="gmd-palette" />
+                        app:iiv_icon="gmd-event" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -158,19 +129,19 @@
                             android:layout_height="wrap_content"
                             android:textSize="16sp"
                             android:textColor="@color/colorPrimaryText"
-                            android:text="@string/tagColor"/>
+                            android:text="@string/changeDueDate"/>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textSize="16sp"
                             android:textColor="@color/colorSecondaryText"
-                            android:text="@{tag.color}"/>
+                            android:text="@{task.dispDueDate()}"/>
                     </LinearLayout>
 
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/tagIconChoose"
+                    android:id="@+id/taskDueTimeChoose"
                     android:layout_width="match_parent"
                     android:layout_height="72dp"
                     android:paddingLeft="16dp"
@@ -180,7 +151,47 @@
                     android:orientation="horizontal">
 
                     <com.mikepenz.iconics.view.IconicsImageView
-                        android:id="@+id/icon_tag_icon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center_vertical"
+                        app:iiv_color="@color/colorHintText"
+                        app:iiv_icon="gmd-clock" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="32dp"
+                        android:layout_marginLeft="32dp"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="16sp"
+                            android:textColor="@color/colorPrimaryText"
+                            android:text="@string/changeDueTime"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="16sp"
+                            android:textColor="@color/colorSecondaryText"
+                            android:text="@{task.dispDueTime()}"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/taskTagChoose"
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="horizontal">
+
+                    <com.mikepenz.iconics.view.IconicsImageView
+                        android:id="@+id/icon_task_icon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
@@ -199,13 +210,13 @@
                             android:layout_height="wrap_content"
                             android:textSize="16sp"
                             android:textColor="@color/colorPrimaryText"
-                            android:text="@string/tagIcon"/>
+                            android:text="@string/changeTag"/>
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textSize="16sp"
                             android:textColor="@color/colorSecondaryText"
-                            android:text="@{tag.icon}"/>
+                            android:text="@{task.tag.hashName}"/>
                     </LinearLayout>
 
                 </LinearLayout>

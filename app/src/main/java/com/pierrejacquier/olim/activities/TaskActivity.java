@@ -22,29 +22,29 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.color.ColorChooserDialog;
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
-import com.pierrejacquier.olim.data.Tag;
-import com.pierrejacquier.olim.databinding.ActivityTagBinding;
+import com.pierrejacquier.olim.data.Task;
+import com.pierrejacquier.olim.databinding.ActivityTaskBinding;
 import com.pierrejacquier.olim.helpers.DbHelper;
 import com.pierrejacquier.olim.helpers.Graphics;
 import com.pierrejacquier.olim.helpers.Tools;
 
-public class TagActivity extends AppCompatActivity implements ColorChooserDialog.ColorCallback {
+import java.util.Date;
+
+public class TaskActivity extends AppCompatActivity implements ColorChooserDialog.ColorCallback {
 
     private Olim app;
-    private Tag tag;
-    private long tagId;
-    private ActivityTagBinding binding;
+    private Task task;
+    private long taskId;
+    private ActivityTaskBinding binding;
     private ActionBar actionBar;
     private DbHelper dbHelper;
-    private ColorChooserDialog colorChooserDialog;
-    private MaterialDialog iconChooserDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = (Olim) getApplicationContext();
         dbHelper = new DbHelper(this);
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_tag);
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_task);
 
         setSupportActionBar(binding.toolbar);
         actionBar = getSupportActionBar();
@@ -54,57 +54,41 @@ public class TagActivity extends AppCompatActivity implements ColorChooserDialog
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                upsertTag();
+                Log.d("TaskActivity@57", task.toString());
+                updateTask();
             }
         });
-        binding.tagColorChoose.setOnClickListener(new View.OnClickListener() {
+        binding.taskDueDateChoose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                colorChooserDialog.show(TagActivity.this);
             }
         });
-        binding.tagIconChoose.setOnClickListener(new View.OnClickListener() {
+        binding.taskDueTimeChoose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                iconChooserDialog.show();
+            }
+        });
+        binding.taskTagChoose.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
             }
         });
 
-        setTag();
-
-        colorChooserDialog = new ColorChooserDialog.Builder(this, R.string.tagTitle)
-                .doneButton(R.string.md_done_label)
-                .cancelButton(R.string.md_cancel_label)
-                .backButton(R.string.md_back_label)
-                .dynamicButtonColor(true)
-                .build();
-
-        iconChooserDialog = new MaterialDialog.Builder(this)
-                .title(R.string.tagIcon)
-                .positiveColor(getResources().getColor(R.color.colorPrimary))
-                .input("iconname", tag.getIcon(), new MaterialDialog.InputCallback() {
-                    @Override
-                    public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
-                        tag.setIcon(input.toString());
-                        binding.setTag(tag);
-                        applyTagIcon();
-                    }
-                })
-                .build();
+        setTask();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_tag, menu);
+        getMenuInflater().inflate(R.menu.menu_task, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.actionDeleteTag) {
+        if (id == R.id.actionDeleteTask) {
             new MaterialDialog.Builder(this)
-                    .title(R.string.delete_tag)
+                    .title(R.string.delete_task)
                     .positiveText(R.string.delete)
                     .positiveColor(getResources().getColor(R.color.colorPrimary))
                     .negativeText(R.string.cancel)
@@ -112,7 +96,7 @@ public class TagActivity extends AppCompatActivity implements ColorChooserDialog
                     .onPositive(new MaterialDialog.SingleButtonCallback() {
                         @Override
                         public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                            removeTag();
+                            removeTask();
                         }
                     })
                     .show();
@@ -125,14 +109,14 @@ public class TagActivity extends AppCompatActivity implements ColorChooserDialog
 
     @Override
     public void onColorSelection(@NonNull ColorChooserDialog dialog, @ColorInt int selectedColor) {
-        tag.setColor(Graphics.intColorToHex(selectedColor));
-        binding.setTag(tag);
-        applyTagColor();
+        //task.setColor(Graphics.intColorToHex(selectedColor));
+        binding.setTask(task);
+        applyTaskColor();
     }
 
     @Override
     public void finish() {
-        app.getCurrentUser().setTags(dbHelper.getTags());
+        app.getCurrentUser().setTasks(dbHelper.getTasks());
         setResult(0);
         super.finish();
     }
@@ -141,62 +125,54 @@ public class TagActivity extends AppCompatActivity implements ColorChooserDialog
      * Layout
      */
 
-    private void applyTagColor() {
-        actionBar.setBackgroundDrawable(new ColorDrawable(Color.parseColor(tag.getColor())));
-        binding.toolbar2.setBackgroundColor(Color.parseColor(tag.getColor()));
+    private void applyTaskColor() {
+        /*
+        actionBar.setBackgroundDrawable(new ColorDrawable(Color.parseColor(task.getColor())));
+        binding.toolbar2.setBackgroundColor(Color.parseColor(task.getColor()));
         if (Build.VERSION.SDK_INT >= 21) {
             Window window = getWindow();
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.setStatusBarColor(Graphics.darken(Color.parseColor(tag.getColor()), 0.1));
+            window.setStatusBarColor(Graphics.darken(Color.parseColor(task.getColor()), 0.1));
         }
+        */
     }
 
-    private void applyTagIcon() {
-        binding.iconTagIcon
-                .setIcon("gmd-" + tag.getIcon().replace("_", "-").replace(" ", "-").toLowerCase());
+    private void applyTaskIcon() {
+        /*
+        binding.iconTaskIcon
+                .setIcon("gmd-" + task.getIcon().replace("_", "-").replace(" ", "-").toLowerCase());
+                */
     }
 
     /**
      * Data
      */
 
-    private Tag getTag() {
-        return dbHelper.getTag(tagId);
+    private Task getTask() {
+        return dbHelper.getTask(taskId);
     }
 
-    private void setTag() {
-        tagId = getIntent().getLongExtra("id", -1);
-        if (tagId == -1) {
-            tag = new Tag().withName("Hey").withIcon("add").withComments("anruise").withColor("#000000");
+    private void setTask() {
+        taskId = getIntent().getLongExtra("id", -1);
+        if (taskId == -1) {
+            finish();
+            return;
         } else {
-            tag = getTag();
+            task = getTask();
         }
-        binding.setTag(tag);
-        applyTagColor();
-        applyTagIcon();
+        binding.setTask(task);
+        applyTaskColor();
+        applyTaskIcon();
     }
 
-    private void insertTag() {
-        dbHelper.insertTag(tag);
+    private void updateTask() {
+        dbHelper.updateTask(task);
         finish();
     }
 
-    private void updateTag() {
-        dbHelper.updateTag(tag);
-        finish();
-    }
-
-    private void upsertTag() {
-        if (tagId == -1) {
-            insertTag();
-        } else {
-            updateTag();
-        }
-    }
-
-    private void removeTag() {
-        dbHelper.removeTag(tag);
+    private void removeTask() {
+        dbHelper.removeTask(task);
         finish();
     }
 }

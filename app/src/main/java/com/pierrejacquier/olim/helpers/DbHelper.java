@@ -72,7 +72,7 @@ public class DbHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public void putTaskInDatabase(Task task) {
+    public void insertTask(Task task) {
         SQLiteDatabase db = getWritableDatabase();
         SQLiteStatement insert = makeInsertTaskStatement(db);
 
@@ -91,7 +91,7 @@ public class DbHelper extends SQLiteOpenHelper {
         db.update(TASKS_TABLE, cv, "id = " + id, null);
     }
 
-    public void putTagInDatabase(Tag tag) {
+    public void insertTag(Tag tag) {
         SQLiteDatabase db = getWritableDatabase();
         SQLiteStatement insert = makeInsertTagStatement(db);
 
@@ -198,9 +198,28 @@ public class DbHelper extends SQLiteOpenHelper {
         return tag;
     }
 
+    public Task getTask(long id) {
+        Task task = null;
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursorTask = db.query(
+                TASKS_TABLE,
+                new String[]{ TASKS_ID_COL, TASKS_TITLE_COL, TASKS_DUE_DATE_COL, TASKS_DONE_COL, TASKS_TAG_COL },
+                TASKS_ID_COL + " LIKE ?",
+                new String[]{ String.valueOf(id) },
+                null,
+                null,
+                null
+        );
+        if (cursorTask.moveToLast()) {
+            task = new Task(cursorTask);
+        }
+        cursorTask.close();
+        return task;
+    }
+
     public void updateTag(Tag tag) {
         if (tag.getId() == -1) {
-            putTagInDatabase(tag);
+            insertTag(tag);
             return;
         }
         SQLiteDatabase db = getWritableDatabase();
@@ -210,6 +229,36 @@ public class DbHelper extends SQLiteOpenHelper {
         cv.put(TAGS_ICON_COL, tag.getIcon());
         cv.put(TAGS_COLOR_COL, tag.getColor());
         db.update(TAGS_TABLE, cv, "id = " + tag.getId(), null);
+    }
+
+    public void updateTask(Task task) {
+        if (task.getId() == -1) {
+            insertTask(task);
+            return;
+        }
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(TASKS_TITLE_COL, task.getTitle());
+        cv.put(TASKS_DUE_DATE_COL, task.getDueDate().getTime());
+        cv.put(TASKS_DONE_COL, task.isDone() ? 1 : 0);
+        cv.put(TASKS_TAG_COL, task.getTag() != null ? task.getTag().getId() : -1);
+        db.update(TASKS_TABLE, cv, "id = " + task.getId(), null);
+    }
+
+    public void removeTag(Tag tag) {
+        if (tag.getId() == -1) {
+            return;
+        }
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete(TAGS_TABLE, "id = " + tag.getId(), null);
+    }
+
+    public void removeTask(Task task) {
+        if (task.getId() == -1) {
+            return;
+        }
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete(TASKS_TABLE, "id = " + task.getId(), null);
     }
 
     public List<Tag> getTags() {

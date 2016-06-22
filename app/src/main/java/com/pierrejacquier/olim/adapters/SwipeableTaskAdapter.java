@@ -65,7 +65,7 @@ public class SwipeableTaskAdapter
 
         void onItemPinned(int position);
 
-        void onItemViewClicked(View v, boolean pinned);
+        void onItemViewClicked(View v, boolean pinned, int position);
     }
 
     public static class TaskViewHolder extends AbstractSwipeableItemViewHolder {
@@ -110,20 +110,26 @@ public class SwipeableTaskAdapter
 
     private void onItemViewClick(View v) {
         if (mEventListener != null) {
-            mEventListener.onItemViewClicked(v, true); // true --- pinned
+            View itemView = RecyclerViewAdapterUtils.getParentViewHolderItemView(v);
+            RecyclerView recyclerView = RecyclerViewAdapterUtils.getParentRecyclerView(itemView);
+            int position = recyclerView.getChildAdapterPosition(itemView);
+            mEventListener.onItemViewClicked(v, true, position); // true --- pinned
         }
     }
 
     private void onSwipeableViewContainerClick(View v) {
         if (mEventListener != null) {
-            mEventListener.onItemViewClicked(RecyclerViewAdapterUtils.getParentViewHolderItemView(v), false);  // false --- not pinned
+            View itemView = RecyclerViewAdapterUtils.getParentViewHolderItemView(v);
+            RecyclerView recyclerView = RecyclerViewAdapterUtils.getParentRecyclerView(itemView);
+            int position = recyclerView.getChildAdapterPosition(itemView);
+            mEventListener.onItemViewClicked(RecyclerViewAdapterUtils.getParentViewHolderItemView(v), false, position);  // false --- not pinned
         }
     }
 
     @Override
     public long getItemId(int position) {
-        //return tasks.get(position).getId();
-        return position;
+        return tasks.get(position).getId();
+        //return position;
     }
 
     @Override

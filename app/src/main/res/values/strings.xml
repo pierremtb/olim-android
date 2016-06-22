@@ -205,4 +205,17 @@
     <string name="tagName">Name</string>
     <string name="tagColor">Color</string>
     <string name="tagIcon">Icon</string>
+    <string name="delete">Delete</string>
+    <string name="delete_tag">Delete this tag?</string>
+    <string name="cancel">Cancel</string>
+    <string name="no_tag_yet">No tag, yet.</string>
+    <string name="delete_task">Delete this task</string>
+    <string name="taskTitle">Title</string>
+    <string name="taskDueDate">Due date</string>
+    <string name="taskTag">Tag</string>
+    <string name="changeDate">Change date</string>
+    <string name="changeDueDate">Change due date</string>
+    <string name="changeDueTime">Change due time</string>
+    <string name="changeTag">Change tag</string>
+    <string name="title_activity_task">Task</string>
 </resources>

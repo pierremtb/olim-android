@@ -4,10 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
-import android.provider.SyncStateContract;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -23,14 +20,14 @@ import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.databinding.FragmentTagsBinding;
 import com.pierrejacquier.olim.helpers.ItemClickSupport;
 
-import butterknife.ButterKnife;
-import butterknife.InjectView;
+import java.util.List;
 
 public class TagsFragment extends Fragment implements View.OnClickListener {
 
-    Olim app;
-    OnFragmentInteractionListener Main;
-    FragmentTagsBinding binding;
+    private Olim app;
+    private OnFragmentInteractionListener Main;
+    private FragmentTagsBinding binding;
+    private List<Tag> tags;
 
     public TagsFragment() {}
 
@@ -38,7 +35,7 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = (Olim) getActivity().getApplicationContext();
-        app.getCurrentUser().getTags();
+        tags = app.getCurrentUser().getTags();
     }
 
     @Override
@@ -48,27 +45,25 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent i = new Intent(getActivity(), TagActivity.class);
-                i.putExtra("id", -1);
-                startActivityForResult(i, 0);
+                launchTagActivity(-1);
             }
         });
+
+        setTags();
+
         return binding.getRoot();
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        binding.tagsRecyclerView.setAdapter(new TagsAdapter(app.getCurrentUser().getTags()));
+
+        binding.tagsRecyclerView.setAdapter(new TagsAdapter(tags));
         binding.tagsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false));
         ItemClickSupport.addTo(binding.tagsRecyclerView).setOnItemClickListener(new ItemClickSupport.OnItemClickListener() {
             @Override
             public void onItemClicked(RecyclerView recyclerView, int position, View v) {
-                Intent intent = new Intent(getActivity(), TagActivity.class);
-                Bundle b = new Bundle();
-                b.putLong("id", app.getCurrentUser().getTags().get(position).getId());
-                intent.putExtras(b);
-                startActivityForResult(intent, 0);
+                launchTagActivity(app.getCurrentUser().getTags().get(position).getId());
             }
         });
     }
@@ -76,8 +71,7 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        binding.tagsRecyclerView.setAdapter(new TagsAdapter(app.getCurrentUser().getTags()));
-        binding.tagsRecyclerView.invalidate();
+        setTags();
     }
 
     @Override
@@ -104,4 +98,32 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
         void toast(String str);
     }
 
+    /**
+     * Navigation
+     */
+
+    private void launchTagActivity(long id) {
+        Intent intent = new Intent(getActivity(), TagActivity.class);
+        Bundle b = new Bundle();
+        b.putLong("id", id);
+        intent.putExtras(b);
+        startActivityForResult(intent, 0);
+    }
+
+    /**
+     * Layout
+     */
+
+    private void setTags() {
+        tags = app.getCurrentUser().getTags();
+        if (tags.size() > 0) {
+            binding.tagsCard.setVisibility(View.VISIBLE);
+            binding.noTagsLayout.setVisibility(View.GONE);
+        } else {
+            binding.tagsCard.setVisibility(View.GONE);
+            binding.noTagsLayout.setVisibility(View.VISIBLE);
+        }
+        binding.tagsRecyclerView.setAdapter(new TagsAdapter(tags));
+        binding.tagsRecyclerView.invalidate();
+    }
 }

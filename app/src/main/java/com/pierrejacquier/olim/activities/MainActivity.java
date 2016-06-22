@@ -28,7 +28,6 @@ import com.github.athingunique.ddbs.NewerDatabaseCallback;
 import com.mikepenz.iconics.context.IconicsContextWrapper;
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
-import com.pierrejacquier.olim.helpers.DbHelper;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.data.User;
@@ -36,6 +35,8 @@ import com.pierrejacquier.olim.databinding.NavHeaderMainBinding;
 import com.pierrejacquier.olim.fragments.LoadingFragment;
 import com.pierrejacquier.olim.fragments.TagsFragment;
 import com.pierrejacquier.olim.fragments.TasksFragment;
+import com.pierrejacquier.olim.helpers.DbHelper;
+
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -78,7 +79,7 @@ public class MainActivity
         // Set data
         dbHelper.clearDatabase();
         Tag tag = new Tag().withName("First").withComments("Yeah").withColor("#000000").withIcon("add");
-        dbHelper.putTagInDatabase(tag);
+        dbHelper.insertTag(tag);
         List<Task> tasks = dbHelper.getTasks();
         List<Tag> tags = dbHelper.getTags();
         String fullName = "User Name";
@@ -289,7 +290,7 @@ public class MainActivity
      */
 
     public void insertTask(Task task) {
-        dbHelper.putTaskInDatabase(task);
+        dbHelper.insertTask(task);
         showTasksFragment();
         updateUserTasks();
     }
