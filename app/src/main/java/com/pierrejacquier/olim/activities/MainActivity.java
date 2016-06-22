@@ -16,12 +16,9 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.util.Patterns;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,7 +28,7 @@ import com.github.athingunique.ddbs.NewerDatabaseCallback;
 import com.mikepenz.iconics.context.IconicsContextWrapper;
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
-import com.pierrejacquier.olim.data.DbHelper;
+import com.pierrejacquier.olim.helpers.DbHelper;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.data.User;
@@ -82,8 +79,8 @@ public class MainActivity
         dbHelper.clearDatabase();
         Tag tag = new Tag().withName("First").withComments("Yeah").withColor("#000000").withIcon("add");
         dbHelper.putTagInDatabase(tag);
-        List<Task> tasks = dbHelper.getTasksFromDatabase();
-        List<Tag> tags = dbHelper.getTagsFromDatabase();
+        List<Task> tasks = dbHelper.getTasks();
+        List<Tag> tags = dbHelper.getTags();
         String fullName = "User Name";
         String email = "user@name.do";
         app.setCurrentUser(new User(fullName, email, tasks, tags));
@@ -304,7 +301,7 @@ public class MainActivity
     }
 
     public void updateUserTasks() {
-        app.getCurrentUser().setTasks(dbHelper.getTasksFromDatabase());
+        app.getCurrentUser().setTasks(dbHelper.getTasks());
     }
 
     public void refreshData() {

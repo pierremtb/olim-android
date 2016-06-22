@@ -35,6 +35,7 @@
                     android:id="@+id/toolbar"
                     android:layout_width="match_parent"
                     android:layout_height="?attr/actionBarSize"
+                    android:layout_marginBottom="10dp"
                     app:layout_collapseMode="none"
                     app:popupTheme="@style/AppTheme.PopupOverlay" />
 
@@ -56,40 +57,61 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
                     android:paddingBottom="26dp"
                     android:paddingLeft="32dp"
                     android:paddingRight="16dp"
-                    android:paddingTop="16dp">
-
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="left|center_vertical"
-                        android:text="#"
-                        android:textSize="25sp" />
-
-                    <android.support.design.widget.TextInputLayout
-                        android:id="@+id/lNameLayout"
+                    android:paddingTop="16dp"
+                    android:orientation="vertical">
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_below="@+id/fNameLayout"
-                        android:layout_gravity="left"
-                        android:layout_marginTop="10dp">
+                        android:orientation="horizontal">
 
-                        <EditText
-                            android:id="@+id/ltitle"
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="left|center_vertical"
+                            android:text="#"
+                            android:textSize="25sp" />
+
+                        <android.support.design.widget.TextInputLayout
+                            android:id="@+id/lNameLayout"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@={tag.name}"
+                            android:layout_gravity="left"
+                            android:layout_marginTop="10dp">
+
+                            <EditText
+                                android:id="@+id/ltitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@={tag.name}"
+                                android:ems="10"
+                                android:hint="@string/tagName"
+                                android:textSize="35sp" />
+                        </android.support.design.widget.TextInputLayout>
+
+                    </LinearLayout>
+
+                    <android.support.design.widget.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left"
+                        android:layout_marginBottom="10dp">
+
+                        <EditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@={tag.comments}"
                             android:ems="10"
-                            android:hint="@string/tagName"
-                            android:textSize="25sp" />
+                            android:hint="@string/tagComments"
+                            android:textSize="18sp" />
                     </android.support.design.widget.TextInputLayout>
 
-
                 </LinearLayout>
+
+
             </android.support.v7.widget.Toolbar>
 
         </android.support.design.widget.AppBarLayout>
@@ -104,56 +126,88 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:orientation="vertical"
-                android:layout_margin="12dp"
+                android:layout_marginTop="8dp"
                 android:layout_height="wrap_content">
 
-
-                <android.support.design.widget.TextInputLayout
+                <LinearLayout
+                    android:id="@+id/tagColorChoose"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:layout_marginTop="10dp">
+                    android:layout_height="72dp"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="horizontal">
 
-                    <EditText
-                        android:layout_width="match_parent"
+                    <com.mikepenz.iconics.view.IconicsImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center_vertical"
+                        app:iiv_color="@color/colorHintText"
+                        app:iiv_icon="gmd-palette" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@={tag.comments}"
-                        android:ems="10"
-                        android:hint="@string/tagComments"
-                        android:textSize="25sp" />
-                </android.support.design.widget.TextInputLayout>
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="32dp"
+                        android:layout_marginLeft="32dp"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="16sp"
+                            android:textColor="@color/colorPrimaryText"
+                            android:text="@string/tagColor"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="16sp"
+                            android:textColor="@color/colorSecondaryText"
+                            android:text="@{tag.color}"/>
+                    </LinearLayout>
 
+                </LinearLayout>
 
-                <android.support.design.widget.TextInputLayout
+                <LinearLayout
+                    android:id="@+id/tagIconChoose"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:layout_marginTop="10dp">
+                    android:layout_height="72dp"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="horizontal">
 
-                    <EditText
-                        android:layout_width="match_parent"
+                    <com.mikepenz.iconics.view.IconicsImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center_vertical"
+                        app:iiv_color="@color/colorHintText"
+                        app:iiv_icon="gmd-format-paint" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@={tag.color}"
-                        android:ems="10"
-                        android:hint="@string/tagColor"
-                        android:textSize="25sp" />
-                </android.support.design.widget.TextInputLayout>
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="32dp"
+                        android:layout_marginLeft="32dp"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="16sp"
+                            android:textColor="@color/colorPrimaryText"
+                            android:text="@string/tagIcon"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="16sp"
+                            android:textColor="@color/colorSecondaryText"
+                            android:text="@{tag.icon}"/>
+                    </LinearLayout>
 
-
-                <android.support.design.widget.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:layout_marginTop="10dp">
-
-                    <EditText
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@={tag.icon}"
-                        android:ems="10"
-                        android:hint="@string/tagIcon"
-                        android:textSize="25sp" />
-                </android.support.design.widget.TextInputLayout>
+                </LinearLayout>
 
             </LinearLayout>
 
@@ -164,7 +218,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/fab_margin"
-            android:src="@drawable/ic_add"
+            android:src="@drawable/ic_save"
             app:layout_anchor="@id/app_bar"
             app:layout_anchorGravity="bottom|end" />
 

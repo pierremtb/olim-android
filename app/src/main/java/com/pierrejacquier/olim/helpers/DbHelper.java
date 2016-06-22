@@ -1,4 +1,4 @@
-package com.pierrejacquier.olim.data;
+package com.pierrejacquier.olim.helpers;
 
 /*
  * Created by evan on 4/28/15.
@@ -10,6 +10,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
+
+import com.pierrejacquier.olim.data.Tag;
+import com.pierrejacquier.olim.data.Task;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -146,7 +149,7 @@ public class DbHelper extends SQLiteOpenHelper {
         return tag;
     }
 
-    public List<Task> getTasksFromDatabase() {
+    public List<Task> getTasks() {
         SQLiteDatabase db = getReadableDatabase();
 
         Cursor cursor = db.query(
@@ -165,19 +168,7 @@ public class DbHelper extends SQLiteOpenHelper {
             do {
                 Task task = new Task(cursor);
                 if (task.getTagId() > 0) {
-                    Cursor cursorTag = db.query(
-                            TAGS_TABLE,
-                            new String[]{ TAGS_ID_COL, TAGS_NAME_COL, TAGS_COMMENTS_COL, TAGS_COLOR_COL, TAGS_ICON_COL },
-                            TAGS_ID_COL + " LIKE ?",
-                            new String[]{ String.valueOf(task.getTagId()) },
-                            null,
-                            null,
-                            null
-                    );
-                    if (cursorTag.moveToLast()) {
-                        task.setTag(new Tag(cursorTag));
-                    }
-                    cursorTag.close();
+                    task.setTag(getTag(task.getTagId()));
                 }
                 tasks.add(task);
             } while (cursor.moveToNext());
@@ -188,7 +179,40 @@ public class DbHelper extends SQLiteOpenHelper {
         return tasks;
     }
 
-    public List<Tag> getTagsFromDatabase() {
+    public Tag getTag(long id) {
+        Tag tag = null;
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursorTag = db.query(
+                TAGS_TABLE,
+                new String[]{ TAGS_ID_COL, TAGS_NAME_COL, TAGS_COMMENTS_COL, TAGS_COLOR_COL, TAGS_ICON_COL },
+                TAGS_ID_COL + " LIKE ?",
+                new String[]{ String.valueOf(id) },
+                null,
+                null,
+                null
+        );
+        if (cursorTag.moveToLast()) {
+            tag = new Tag(cursorTag);
+        }
+        cursorTag.close();
+        return tag;
+    }
+
+    public void updateTag(Tag tag) {
+        if (tag.getId() == -1) {
+            putTagInDatabase(tag);
+            return;
+        }
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(TAGS_NAME_COL, tag.getName());
+        cv.put(TAGS_COMMENTS_COL, tag.getComments());
+        cv.put(TAGS_ICON_COL, tag.getIcon());
+        cv.put(TAGS_COLOR_COL, tag.getColor());
+        db.update(TAGS_TABLE, cv, "id = " + tag.getId(), null);
+    }
+
+    public List<Tag> getTags() {
         SQLiteDatabase db = getReadableDatabase();
 
         Cursor cursor = db.query(

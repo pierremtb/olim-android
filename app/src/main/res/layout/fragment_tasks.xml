@@ -128,12 +128,16 @@
                         android:layout_width="fill_parent"
                         android:layout_height="wrap_content"
                         android:layout_margin="0dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
                         card_view:cardBackgroundColor="@color/cardsbg"
                         card_view:cardCornerRadius="@dimen/card_corner_radius"
                         card_view:cardElevation="@dimen/cards_elevation">
 
                         <android.support.v7.widget.RecyclerView
                             android:id="@+id/overdueTasksRecyclerView"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="8dp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:scrollbars="none" />
@@ -204,6 +208,8 @@
 
                         <android.support.v7.widget.RecyclerView
                             android:id="@+id/todayTasksRecyclerView"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="8dp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:scrollbars="none" />
@@ -275,6 +281,8 @@
 
                         <android.support.v7.widget.RecyclerView
                             android:id="@+id/tomorrowTasksRecyclerView"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="8dp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:scrollbars="vertical" />
@@ -346,6 +354,8 @@
 
                         <android.support.v7.widget.RecyclerView
                             android:id="@+id/inTheNextSevenDaysTasksRecyclerView"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="8dp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:scrollbars="vertical" />
@@ -417,6 +427,8 @@
 
                         <android.support.v7.widget.RecyclerView
                             android:id="@+id/laterTasksRecyclerView"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="8dp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:scrollbars="vertical" />

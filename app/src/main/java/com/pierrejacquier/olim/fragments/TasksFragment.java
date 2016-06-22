@@ -338,10 +338,6 @@ public class TasksFragment
         overdueTasksRecyclerView.setLayoutManager(overdueTasksLayoutManager);
         overdueTasksRecyclerView.setAdapter(overdueTasksWrappedAdapter);
         overdueTasksRecyclerView.setItemAnimator(overdueTasksAnimator);
-        if (!supportsViewElevation()) {
-            overdueTasksRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
-        }
-        overdueTasksRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
         overdueTasksRecyclerViewTouchActionGuardManager.attachRecyclerView(overdueTasksRecyclerView);
         overdueTasksRecyclerViewSwipeManager.attachRecyclerView(overdueTasksRecyclerView);
 
@@ -360,10 +356,6 @@ public class TasksFragment
         todayTasksRecyclerView.setLayoutManager(todayTasksLayoutManager);
         todayTasksRecyclerView.setAdapter(todayTasksWrappedAdapter);
         todayTasksRecyclerView.setItemAnimator(todayTasksAnimator);
-        if (!supportsViewElevation()) {
-            todayTasksRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
-        }
-        todayTasksRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
         todayTasksRecyclerViewTouchActionGuardManager.attachRecyclerView(todayTasksRecyclerView);
         todayTasksRecyclerViewSwipeManager.attachRecyclerView(todayTasksRecyclerView);
 
@@ -382,10 +374,6 @@ public class TasksFragment
         tomorrowTasksRecyclerView.setLayoutManager(tomorrowTasksLayoutManager);
         tomorrowTasksRecyclerView.setAdapter(tomorrowTasksWrappedAdapter);
         tomorrowTasksRecyclerView.setItemAnimator(tomorrowTasksAnimator);
-        if (!supportsViewElevation()) {
-            tomorrowTasksRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
-        }
-        tomorrowTasksRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
         tomorrowTasksRecyclerViewTouchActionGuardManager.attachRecyclerView(tomorrowTasksRecyclerView);
         tomorrowTasksRecyclerViewSwipeManager.attachRecyclerView(tomorrowTasksRecyclerView);
 
@@ -404,10 +392,6 @@ public class TasksFragment
         inTheNextSevenDaysTasksRecyclerView.setLayoutManager(inTheNextSevenDaysTasksLayoutManager);
         inTheNextSevenDaysTasksRecyclerView.setAdapter(inTheNextSevenDaysTasksWrappedAdapter);
         inTheNextSevenDaysTasksRecyclerView.setItemAnimator(inTheNextSevenDaysTasksAnimator);
-        if (!supportsViewElevation()) {
-            inTheNextSevenDaysTasksRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
-        }
-        inTheNextSevenDaysTasksRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
         inTheNextSevenDaysTasksRecyclerViewTouchActionGuardManager.attachRecyclerView(inTheNextSevenDaysTasksRecyclerView);
         inTheNextSevenDaysTasksRecyclerViewSwipeManager.attachRecyclerView(inTheNextSevenDaysTasksRecyclerView);
 
@@ -426,10 +410,6 @@ public class TasksFragment
         laterTasksRecyclerView.setLayoutManager(laterTasksLayoutManager);
         laterTasksRecyclerView.setAdapter(laterTasksWrappedAdapter);
         laterTasksRecyclerView.setItemAnimator(laterTasksAnimator);
-        if (!supportsViewElevation()) {
-            laterTasksRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(getContext(), R.drawable.material_shadow_z1)));
-        }
-        laterTasksRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(getContext(), R.drawable.list_divider_h), true));
         laterTasksRecyclerViewTouchActionGuardManager.attachRecyclerView(laterTasksRecyclerView);
         laterTasksRecyclerViewSwipeManager.attachRecyclerView(laterTasksRecyclerView);
 

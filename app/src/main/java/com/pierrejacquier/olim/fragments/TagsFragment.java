@@ -2,6 +2,7 @@ package com.pierrejacquier.olim.fragments;
 
 import android.content.Context;
 import android.content.Intent;
+import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.provider.SyncStateContract;
 import android.support.annotation.Nullable;
@@ -19,11 +20,17 @@ import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.activities.TagActivity;
 import com.pierrejacquier.olim.adapters.TagsAdapter;
 import com.pierrejacquier.olim.data.Tag;
+import com.pierrejacquier.olim.databinding.FragmentTagsBinding;
+import com.pierrejacquier.olim.helpers.ItemClickSupport;
+
+import butterknife.ButterKnife;
+import butterknife.InjectView;
 
 public class TagsFragment extends Fragment implements View.OnClickListener {
 
     Olim app;
     OnFragmentInteractionListener Main;
+    FragmentTagsBinding binding;
 
     public TagsFragment() {}
 
@@ -37,26 +44,40 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View myView = inflater.inflate(R.layout.fragment_tags, container, false);
-        FloatingActionButton fab = (FloatingActionButton) myView.findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_tags, container, false);
+        binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent i = new Intent(getActivity(), TagActivity.class);
                 i.putExtra("id", -1);
-                startActivity(i);
+                startActivityForResult(i, 0);
             }
         });
-        return myView;
+        return binding.getRoot();
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        binding.tagsRecyclerView.setAdapter(new TagsAdapter(app.getCurrentUser().getTags()));
+        binding.tagsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false));
+        ItemClickSupport.addTo(binding.tagsRecyclerView).setOnItemClickListener(new ItemClickSupport.OnItemClickListener() {
+            @Override
+            public void onItemClicked(RecyclerView recyclerView, int position, View v) {
+                Intent intent = new Intent(getActivity(), TagActivity.class);
+                Bundle b = new Bundle();
+                b.putLong("id", app.getCurrentUser().getTags().get(position).getId());
+                intent.putExtras(b);
+                startActivityForResult(intent, 0);
+            }
+        });
+    }
 
-        RecyclerView tagsRecyclerView = (RecyclerView) view.findViewById(R.id.tagsRecyclerView);
-        tagsRecyclerView.setAdapter(new TagsAdapter(app.getCurrentUser().getTags()));
-        tagsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false));
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        binding.tagsRecyclerView.setAdapter(new TagsAdapter(app.getCurrentUser().getTags()));
+        binding.tagsRecyclerView.invalidate();
     }
 
     @Override
@@ -83,5 +104,4 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
         void toast(String str);
     }
 
-    // Affichage
 }
