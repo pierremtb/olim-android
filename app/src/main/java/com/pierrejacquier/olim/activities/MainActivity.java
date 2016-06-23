@@ -2,30 +2,59 @@ package com.pierrejacquier.olim.activities;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.github.athingunique.ddbs.DriveSyncController;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.plus.People;
+import com.google.android.gms.plus.Plus;
+import com.google.android.gms.plus.model.people.Person;
+import com.mikepenz.materialdrawer.holder.ImageHolder;
+import com.pierrejacquier.olim.helpers.DriveApiFactory;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.pierrejacquier.olim.helpers.DriveSyncController;
 import com.github.athingunique.ddbs.NewerDatabaseCallback;
+import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.iconics.context.IconicsContextWrapper;
+import com.mikepenz.materialdrawer.AccountHeader;
+import com.mikepenz.materialdrawer.AccountHeaderBuilder;
+import com.mikepenz.materialdrawer.Drawer;
+import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.model.DividerDrawerItem;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.ProfileDrawerItem;
+import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IProfile;
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.data.Tag;
@@ -37,6 +66,9 @@ import com.pierrejacquier.olim.fragments.TagsFragment;
 import com.pierrejacquier.olim.fragments.TasksFragment;
 import com.pierrejacquier.olim.helpers.DbHelper;
 
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -45,9 +77,11 @@ public class MainActivity
         implements NewerDatabaseCallback,
             NavigationView.OnNavigationItemSelectedListener,
             TasksFragment.OnFragmentInteractionListener,
-            TagsFragment.OnFragmentInteractionListener {
+            TagsFragment.OnFragmentInteractionListener,
+        DriveSyncController.GoogleApiClientCallbacks
+        {
 
-    Olim app;
+    private Olim app;
     private static final int RESOLVE_CONNECTION_REQUEST_CODE = 1;
     public static MaterialDialog loadingDialog;
     public static ActionBar actionBar;
@@ -58,6 +92,16 @@ public class MainActivity
     private final int FILTER_MENU_POSITION = 1;
     private DbHelper dbHelper;
     private DriveSyncController syncController;
+    private GoogleApiClient googleApiClient;
+    private Bitmap profilePicture;
+    private AccountHeader headerResult;
+    private Drawer drawer;
+    private Toolbar toolbar;
+    
+    final static int DRAWER_TASKS = 0;
+    final static int DRAWER_TAGS = 1;
+    final static int DRAWER_SETTINGS = 2;
+    final static int DRAWER_SIGNOUT = 3;
 
     TextView drawerFullName;
     TextView drawerEmail;
@@ -65,62 +109,166 @@ public class MainActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
         app = (Olim) getApplicationContext();
-
+        String fullName = "User Name";
+        String email = "user@name.do";
+        app.setCurrentUser(new User(fullName, email, null, null));
+        super.onCreate(savedInstanceState);
         // Initiate SQLiteOpenHelper
         dbHelper = new DbHelper(this);
+        List<Task> tasks = dbHelper.getTasks();
+        List<Tag> tags = dbHelper.getTags();
+        fullName = "User Name";
+        email = "user@name.do";
+        app.setCurrentUser(new User(fullName, email, tasks, tags));
 
+        Log.d("MainActivity@96", "ONCREATE");
         // Initiate DriveSyncController
         syncController = DriveSyncController.get(this, dbHelper, this).setDebug(true);
 
+        setContentView(R.layout.activity_main);
+
+
+
         // Set data
-        dbHelper.clearDatabase();
-        Tag tag = new Tag().withName("First").withComments("Yeah").withColor("#000000").withIcon("add");
-        dbHelper.insertTag(tag);
-        List<Task> tasks = dbHelper.getTasks();
-        List<Tag> tags = dbHelper.getTags();
-        String fullName = "User Name";
-        String email = "user@name.do";
-        app.setCurrentUser(new User(fullName, email, tasks, tags));
+//        dbHelper.clearDatabase();
+//        Tag tag = new Tag().withName("First").withComments("Yeah").withColor("#000000").withIcon("add");
+//        dbHelper.insertTag(tag);
 
         // Do some layout stuff
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         actionBar = getSupportActionBar();
         actionBar.setElevation(0);
         actionBar.setTitle("Tasks");
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
-        NavHeaderMainBinding binding = DataBindingUtil.inflate(getLayoutInflater(), R.layout.nav_header_main, navigationView, false);
-        navigationView.addHeaderView(binding.getRoot());
-        binding.setUser(app.getCurrentUser());
+        headerResult = new AccountHeaderBuilder()
+                .withActivity(this)
+                .withHeaderBackground(R.drawable.background)
+                .addProfiles(
+                        new ProfileDrawerItem()
+                                .withName(app.getCurrentUser().getFullName())
+                                .withEmail("work@pierrejacquier.com")
+                                .withIcon(GoogleMaterial.Icon.gmd_account_circle)
+                )
+                .withOnAccountHeaderListener(new AccountHeader.OnAccountHeaderListener() {
+                    @Override
+                    public boolean onProfileChanged(View view, IProfile profile, boolean current) {
+                        return false;
+                    }
+                })
+                .build();
+        drawer = new DrawerBuilder()
+                .withActivity(this)
+                .withToolbar(toolbar)
+                .withAccountHeader(headerResult)
+                .addDrawerItems(
+                        new PrimaryDrawerItem()
+                                .withIdentifier(DRAWER_TASKS)
+                                .withName(R.string.navigation_drawer_tasks)
+                                .withIcon(GoogleMaterial.Icon.gmd_done_all),
+                        new PrimaryDrawerItem()
+                                .withIdentifier(DRAWER_TAGS)
+                                .withName(R.string.navigation_drawer_tags)
+                                .withIcon(GoogleMaterial.Icon.gmd_label_outline),
+                        new DividerDrawerItem(),
+                        new SecondaryDrawerItem()
+                                .withIdentifier(DRAWER_SETTINGS)
+                                .withName(R.string.navigation_drawer_settings)
+                                .withIcon(GoogleMaterial.Icon.gmd_settings)
+                        ,
+                        new SecondaryDrawerItem()
+                                .withIdentifier(DRAWER_SIGNOUT)
+                                .withName(R.string.navigation_drawer_signout)
+                                .withIcon(GoogleMaterial.Icon.gmd_exit_to_app)
+                )
+                .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+                    @Override
+                    public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+                        switch (position) {
+                            case DRAWER_TASKS:
+                                showTasksFragment();
+                                break;
+                            case DRAWER_TAGS:
+                                showTagsFragment();
+                                break;
+                            case DRAWER_SETTINGS:
+                                launchSettings();
+                                break;
+                            default: break;
+                        }
+                        return false;
+                    }
+                })
+                .build();
+//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+//        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+//                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+//        drawer.setDrawerListener(toggle);
+//        toggle.syncState();
+//        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+//        navigationView.setNavigationItemSelectedListener(this);
+//        NavHeaderMainBinding binding = DataBindingUtil.inflate(getLayoutInflater(), R.layout.nav_header_main, navigationView, false);
+//        navigationView.addHeaderView(binding.getRoot());
+//        binding.setUser(app.getCurrentUser());
         prepareMenus();
         showTasksFragment();
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
+//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+//        if (drawer.isDrawerOpen(GravityCompat.START)) {
+//            drawer.closeDrawer(GravityCompat.START);
+//        } else {
             super.onBackPressed();
-        }
+//        }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         actionsMenu = menu;
+
+        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(menu.findItem(R.id.action_search));
+        SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        SearchView.SearchAutoComplete theTextArea = (SearchView.SearchAutoComplete) searchView.findViewById(android.support.v7.appcompat.R.id.search_src_text);
+        theTextArea.setTextColor(getResources().getColor(R.color.colorPrimaryText));
+        searchView.setOnQueryTextFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean opening) {
+                if (opening) {
+                    getTasksFragment().hideTaskAdder();
+                } else {
+                    getTasksFragment().showTaskAdder();
+                }
+            }
+        });
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                List<Task> tasks = dbHelper.getTasks(getTasksFragment().getCurrentTag());
+                List<Task> filteredTasks = new ArrayList<Task>();
+                if (newText.equals("")) {
+                    filteredTasks = tasks;
+                } else {
+                    for (Task task : tasks) {
+                        if (task.getTitle() != null &&
+                            task.getTitle().toUpperCase().contains(newText.toUpperCase())) {
+                            filteredTasks.add(task);
+                        }
+                    }
+                }
+                app.getCurrentUser().setTasks(filteredTasks);
+                getTasksFragment().reRenderTasks();
+                return false;
+            }
+        });
         return true;
     }
 
@@ -137,7 +285,7 @@ public class MainActivity
                 break;
             case R.id.action_search:
                 if (currentFragmentName.equals("TasksFragment")) {
-                    getTasksFragment().showSnack("Search is not available, yet");
+                    getTasksFragment().hideTaskAdder();
                 }
                 break;
             default: break;
@@ -166,8 +314,8 @@ public class MainActivity
                 break;
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+//        drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
@@ -295,6 +443,20 @@ public class MainActivity
         updateUserTasks();
     }
 
+    public void updateTask(Task task) {
+        dbHelper.updateTask(task);
+        showTasksFragment();
+        updateUserTasks();
+    }
+
+    public Tag getTag(long id) {
+        return dbHelper.getTag(id);
+    }
+
+    public List<Task> getTasks(Tag tag) {
+        return dbHelper.getTasks(tag);
+    }
+
     public void setThisTaskStatus(long id, long status) {
         dbHelper.setThisTaskStatus(id, status);
         showTasksFragment();
@@ -320,5 +482,11 @@ public class MainActivity
             }
         }
         return possibleEmail;
+    }
+
+    @Override
+    public void onGoogleConnected() {
+        Log.d("MainActivity@464", "GGGGGGGGGGGGGGGGGGGGGGGGGG " );
+        //Log.d("MainActivity@488", app.toString());
     }
 }

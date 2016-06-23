@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -33,7 +34,6 @@ public class Task {
     }
 
     public Task(Cursor cursor) {
-        Log.d("Task@31", Arrays.toString(cursor.getColumnNames()));
         this.id = cursor.getLong(0);
         this.title = cursor.getString(1);
         this.dueDate = new Date(cursor.getLong(2));
@@ -66,6 +66,11 @@ public class Task {
 
     public void setTag(Tag tag) {
         this.tag = tag;
+        if (tag == null) {
+            this.tagId = -1;
+        } else {
+            this.tagId = tag.getId();
+        }
     }
     
     public Task withTag(Tag tag) {
@@ -98,8 +103,28 @@ public class Task {
     public void setDueDate(Date dueDate) {
         this.dueDate = dueDate;
     }
+
     public void setDueDate(long dueDate) {
         setDueDate(new Date(dueDate));
+    }
+
+    public void setDueDate(int year, int month, int day) {
+        Calendar date = Calendar.getInstance();
+        date.setTime(dueDate);
+        date.set(Calendar.YEAR, year);
+        date.set(Calendar.MONTH, month);
+        date.set(Calendar.DAY_OF_MONTH, day);
+        setDueDate(date.getTime());
+    }
+
+    public void setDueDate(int hour, int minute) {
+        Calendar date = Calendar.getInstance();
+        date.setTime(dueDate);
+        date.set(Calendar.HOUR, hour);
+        date.set(Calendar.MINUTE, minute);
+        date.set(Calendar.SECOND, 0);
+        date.set(Calendar.MILLISECOND, 0);
+        setDueDate(date.getTime());
     }
 
     public Task withDueDate(Date date) {

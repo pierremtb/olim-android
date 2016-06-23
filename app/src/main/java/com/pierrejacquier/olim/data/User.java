@@ -209,7 +209,7 @@ public class User {
         List<Task> laterTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
         Calendar inTheNextSevenDaysEnd = Calendar.getInstance();
-        inTheNextSevenDaysEnd.add(Calendar.DAY_OF_MONTH, 8);
+        inTheNextSevenDaysEnd.add(Calendar.DAY_OF_MONTH, 7);
         Tools.setStartOfDay(inTheNextSevenDaysEnd);
 
         for (Task task : tasks) {
@@ -241,5 +241,9 @@ public class User {
         }
         result.append("}");
         return result.toString();
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 }

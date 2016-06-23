@@ -250,8 +250,6 @@ public class SwipeableTaskAdapter
 
     @Override
     public SwipeResultAction onSwipeItem(TaskViewHolder holder, final int position, int result) {
-        Log.d(TAG, "onSwipeItem(position = " + position + ", result = " + result + ")");
-
         switch (result) {
             // swipe right
             case Swipeable.RESULT_SWIPED_RIGHT:

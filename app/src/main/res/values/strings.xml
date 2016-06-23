@@ -36,6 +36,7 @@
     <string name="add_note">Add a new task</string>
     <string name="add_a_task">Add a new task</string>
     <string name="title_activity_settings">Settings</string>
+    <string name="no_tag">No tag</string>
 
     <!-- Strings related to Settings -->
 
@@ -218,4 +219,6 @@
     <string name="changeDueTime">Change due time</string>
     <string name="changeTag">Change tag</string>
     <string name="title_activity_task">Task</string>
+    <string name="change_tag">Change tag</string>
+    <string name="create_tag">Create tag</string>
 </resources>

@@ -1,5 +1,9 @@
 package com.pierrejacquier.olim.activities;
 
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -16,28 +20,40 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.DatePicker;
+import android.widget.ListView;
+import android.widget.TimePicker;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.color.ColorChooserDialog;
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
+import com.pierrejacquier.olim.adapters.TagsListAdapter;
+import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.databinding.ActivityTaskBinding;
 import com.pierrejacquier.olim.helpers.DbHelper;
 import com.pierrejacquier.olim.helpers.Graphics;
 import com.pierrejacquier.olim.helpers.Tools;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
-public class TaskActivity extends AppCompatActivity implements ColorChooserDialog.ColorCallback {
+public class TaskActivity extends AppCompatActivity implements View.OnClickListener {
 
     private Olim app;
     private Task task;
+    private List<Tag> tags;
     private long taskId;
     private ActivityTaskBinding binding;
     private ActionBar actionBar;
     private DbHelper dbHelper;
+    private DatePickerDialog datePickerDialog;
+    private TimePickerDialog timePickerDialog;
+    public MaterialDialog tagsFilteringDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,30 +67,66 @@ public class TaskActivity extends AppCompatActivity implements ColorChooserDialo
         actionBar.setDisplayHomeAsUpEnabled(true);
         actionBar.setTitle("");
 
+        final Context context = this;
+
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d("TaskActivity@57", task.toString());
                 updateTask();
             }
         });
         binding.taskDueDateChoose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Calendar taskDueDate = Calendar.getInstance();
+                taskDueDate.setTime(task.getDueDate());
+                int taskYear = taskDueDate.get(Calendar.YEAR);
+                int taskMonth = taskDueDate.get(Calendar.MONTH);
+                int taskDay = taskDueDate.get(Calendar.DAY_OF_MONTH);
+                datePickerDialog = new DatePickerDialog(context,
+                        new DatePickerDialog.OnDateSetListener() {
+                            @Override
+                            public void onDateSet(DatePicker view, int year,
+                                                  int month, int day) {
+                                task.setDueDate(year, month, day);
+                                binding.setTask(task);
+
+                            }
+                        }, taskYear, taskMonth, taskDay);
+                datePickerDialog.show();
             }
         });
         binding.taskDueTimeChoose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Calendar taskDueDate = Calendar.getInstance();
+                taskDueDate.setTime(task.getDueDate());
+                int taskHour = taskDueDate.get(Calendar.YEAR);
+                int taskMinute = taskDueDate.get(Calendar.MONTH);
+                timePickerDialog = new TimePickerDialog(context,
+                        new TimePickerDialog.OnTimeSetListener() {
+                            @Override
+                            public void onTimeSet(TimePicker view, int hour,
+                                                  int minute) {
+                                task.setDueDate(hour, minute);
+                                binding.setTask(task);
+
+                            }
+                        }, taskHour, taskMinute, false);
+                timePickerDialog.show();
             }
         });
         binding.taskTagChoose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                tagsFilteringDialog.show();
             }
         });
 
         setTask();
+        tags = app.getCurrentUser().getTags();
+
+        createTagsDialog(this);
     }
 
     @Override
@@ -108,10 +160,11 @@ public class TaskActivity extends AppCompatActivity implements ColorChooserDialo
     }
 
     @Override
-    public void onColorSelection(@NonNull ColorChooserDialog dialog, @ColorInt int selectedColor) {
-        //task.setColor(Graphics.intColorToHex(selectedColor));
-        binding.setTask(task);
-        applyTaskColor();
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        tags = app.getCurrentUser().getTags();
+        createTagsDialog(this);
+        tagsFilteringDialog.show();
     }
 
     @Override
@@ -126,23 +179,62 @@ public class TaskActivity extends AppCompatActivity implements ColorChooserDialo
      */
 
     private void applyTaskColor() {
-        /*
-        actionBar.setBackgroundDrawable(new ColorDrawable(Color.parseColor(task.getColor())));
-        binding.toolbar2.setBackgroundColor(Color.parseColor(task.getColor()));
+        if (task == null) {
+            finish();
+        }
+
+        if (task.getTag() == null) {
+            finish();
+        }
+
+        if (task.getTagId() == -1) {
+            return;
+        }
+
+        actionBar.setBackgroundDrawable(new ColorDrawable(Color.parseColor(task.getTag().getColor())));
+        binding.toolbar2.setBackgroundColor(Color.parseColor(task.getTag().getColor()));
         if (Build.VERSION.SDK_INT >= 21) {
             Window window = getWindow();
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.setStatusBarColor(Graphics.darken(Color.parseColor(task.getColor()), 0.1));
+            window.setStatusBarColor(Graphics.darken(Color.parseColor(task.getTag().getColor()), 0.1));
         }
-        */
     }
 
     private void applyTaskIcon() {
-        /*
+        if (task.getTagId() == -1) {
+            return;
+        }
+
         binding.iconTaskIcon
-                .setIcon("gmd-" + task.getIcon().replace("_", "-").replace(" ", "-").toLowerCase());
-                */
+                .setIcon("gmd-" + task.getTag().getIcon().replace("_", "-").replace(" ", "-").toLowerCase());
+    }
+
+    private void createTagsDialog(Context context) {
+        tagsFilteringDialog = new MaterialDialog.Builder(this)
+                .title(R.string.change_tag)
+                .autoDismiss(true)
+                .positiveText(R.string.clear)
+                .positiveColor(getResources().getColor(R.color.colorPrimary))
+                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        task.setTag(null);
+                        binding.setTask(task);
+                        applyTaskColor();
+                        applyTaskIcon();
+                    }
+                })
+                .negativeText(R.string.create_tag)
+                .negativeColor(getResources().getColor(R.color.colorPrimaryText))
+                .onNegative(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        launchTagActivity(-1);
+                    }
+                })
+                .adapter(new TagsListAdapter(this, tags.toArray(new Tag[tags.size()]), this), null)
+                .build();
     }
 
     /**
@@ -175,4 +267,27 @@ public class TaskActivity extends AppCompatActivity implements ColorChooserDialo
         dbHelper.removeTask(task);
         finish();
     }
+
+    @Override
+    public void onClick(View v) {
+        int key = Integer.valueOf(v.getTag().toString());
+        tagsFilteringDialog.dismiss();
+        task.setTag(tags.get(key));
+        binding.setTask(task);
+        applyTaskColor();
+        applyTaskIcon();
+    }
+
+    /**
+     * Navigation
+     */
+
+    private void launchTagActivity(long id) {
+        Intent intent = new Intent(getApplicationContext(), TagActivity.class);
+        Bundle b = new Bundle();
+        b.putLong("id", id);
+        intent.putExtras(b);
+        startActivityForResult(intent, 0);
+    }
+
 }

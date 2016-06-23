@@ -155,7 +155,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
                         app:iiv_color="@color/colorHintText"
-                        app:iiv_icon="gmd-clock" />
+                        app:iiv_icon="gmd-access-time" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -196,7 +196,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
                         app:iiv_color="@color/colorHintText"
-                        app:iiv_icon="gmd-format-paint" />
+                        app:iiv_icon="gmd-label-outline" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -216,7 +216,7 @@
                             android:layout_height="wrap_content"
                             android:textSize="16sp"
                             android:textColor="@color/colorSecondaryText"
-                            android:text="@{task.tag.hashName}"/>
+                            android:text='@{task.tagId == -1 ? @string/no_tag : task.tag.hashName}'/>
                     </LinearLayout>
 
                 </LinearLayout>

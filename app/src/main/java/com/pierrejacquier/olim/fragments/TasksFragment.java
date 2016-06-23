@@ -13,6 +13,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -57,6 +58,7 @@ import com.pierrejacquier.olim.helpers.Tools;
 import com.rengwuxian.materialedittext.MaterialEditText;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -109,6 +111,8 @@ public class TasksFragment
     private RecyclerView inTheNextSevenDaysTasksRecyclerView;
     private RecyclerView laterTasksRecyclerView;
 
+    @InjectView(R.id.taskAdderCard)
+    CardView taskAdderCard;
 
     @InjectView(R.id.markAsDoneAllOverdueTasksImageView) ImageView markAsDoneAllOverdueTasksImageView;
     @InjectView(R.id.markAsDoneAllTodayTasksImageView) ImageView markAsDoneAllTodayTasksImageView;
@@ -440,7 +444,6 @@ public class TasksFragment
                 String text = editable.toString();
                 if (!text.equals("")) {
                     newTask.setTitle(text);
-                    Log.d("TasksFragment@453", newTask.toString());
                     renderPreviewTask();
                 } else {
                     previewTaskLayout.setVisibility(View.GONE);
@@ -473,6 +476,12 @@ public class TasksFragment
     }
 
     @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        reRenderTasks();
+    }
+
+    @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         try {
@@ -499,14 +508,17 @@ public class TasksFragment
 
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-        Log.d("TasksFragment", "onItemClick (line 319): Write a log message" + i);
     }
-
     public interface OnFragmentInteractionListener {
-        void toast(String str);
         void insertTask(Task task);
+
+        void updateTask(Task task);
+
+        Tag getTag(long id);
+
         void refreshData();
-        void setThisTaskStatus(long id, long done);
+
+        List<Task> getTasks(Tag currentTag);
     }
 
     // Data
@@ -523,8 +535,8 @@ public class TasksFragment
             return;
         }
 
-        overdueTasks.addAll(user.getOverdueTasks(tag));
-        todayTasks.addAll(user.getTodayTasks(tag));
+        overdueTasks.addAll(populateTags(user.getOverdueTasks(tag)));
+        todayTasks.addAll(populateTags(user.getTodayTasks(tag)));
         tomorrowTasks.addAll(user.getTomorrowTasks(tag));
         inTheNextSevenDaysTasks.addAll(user.getInTheNextSevenDaysTasks(tag));
         laterTasks.addAll(user.getLaterTasks(tag));
@@ -536,15 +548,30 @@ public class TasksFragment
         destroyPreviewTask();
     }
 
+    private List<Task> populateTags(List<Task> tasks) {
+        for (Task task : tasks) {
+            long tagId = task.getTagId();
+            if (tagId != -1) {
+                task.setTag(Main.getTag(tagId));
+            }
+        }
+        return tasks;
+    }
+
     private void postponeAllTheseTasks(List<Task> tasks) {
         for (Task task : tasks) {
-            //task.postponeToNextDayServer();
+            Calendar dueDate = Calendar.getInstance();
+            dueDate.setTime(task.getDueDate());
+            dueDate.add(Calendar.DAY_OF_MONTH, 1);
+            task.setDueDate(dueDate.getTime());
+            Main.updateTask(task);
         }
     }
 
     private void markAsDoneAllTheseTasks(List<Task> tasks) {
         for (Task task : tasks) {
-            //task.markAsDoneServer();
+            task.setDone(true);
+            Main.updateTask(task);
         }
     }
 
@@ -593,13 +620,6 @@ public class TasksFragment
         inTheNextSevenDaysTasksItemAdapter.notifyDataSetChanged();
         laterTasksWrappedAdapter.notifyDataSetChanged();
         laterTasksItemAdapter.notifyDataSetChanged();
-
-        //WrapperAdapterUtils.releaseAll(todayTasksWrappedAdapter);
-        //todayTasksRecyclerViewSwipeManager.release();
-        //todayTasksItemAdapter = new SwipeableTaskAdapter(todayTasks);
-        //todayTasksWrappedAdapter = todayTasksRecyclerViewSwipeManager.createWrappedAdapter(todayTasksItemAdapter);
-        //todayTasksRecyclerView.swapAdapter(todayTasksWrappedAdapter, false);
-        //Log.d("TasksFragment@603", todayTasks.toString());
     }
 
     public void reRenderTasks() {
@@ -607,8 +627,14 @@ public class TasksFragment
         displayTasks();
     }
 
+    public Tag getCurrentTag() {
+        return currentTag;
+    }
+
+
     public void setCurrentTag(Tag tag) {
         currentTag = tag;
+        app.getCurrentUser().setTasks(Main.getTasks(currentTag));
         fetchTasks(currentTag);
         displayTasks();
 
@@ -661,6 +687,14 @@ public class TasksFragment
         setCurrentTag(null);
     }
 
+    public void hideTaskAdder() {
+        taskAdderCard.setVisibility(View.GONE);
+    }
+
+    public void showTaskAdder() {
+        taskAdderCard.setVisibility(View.VISIBLE);
+    }
+
     private void renderPreviewTask() {
         previewTaskLayout.setVisibility(View.VISIBLE);
         taskAdderSendButton.setColorFilter(getResources().getColor(R.color.colorAccent), PorterDuff.Mode.SRC_IN);
@@ -686,7 +720,6 @@ public class TasksFragment
     }
 
     public void showSnack(String text) {
-        Log.d("TasksFragment", "showSnack (line 599): Write a log message" + text);
         Snackbar.make(tasksCoordinatorLayout, text, Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show();
     }
@@ -695,16 +728,12 @@ public class TasksFragment
      * Navigation
      */
 
-    private void launchTagActivity(long id) {
+    private void launchTaskActivity(long id) {
         Intent intent = new Intent(getActivity(), TaskActivity.class);
         Bundle b = new Bundle();
         b.putLong("id", id);
         intent.putExtras(b);
         startActivityForResult(intent, 0);
-    }
-
-    private boolean supportsViewElevation() {
-        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
     }
 
     public class TaskEventsListener implements SwipeableTaskAdapter.EventListener {
@@ -718,21 +747,23 @@ public class TasksFragment
         @Override
         public void onItemRemoved(int position) {
             Task task = tasks.get(position);
-            Main.refreshData();
             task.setDone(!task.isDone());
-            Main.setThisTaskStatus(task.getId(), task.isDone() ? 0 : 1);
-            //task.toggleDoneServer();
+            Main.updateTask(task);
         }
 
         @Override
         public void onItemPinned(int position) {
             Task task = tasks.get(position);
-            //task.postponeToNextDayServer();
+            Calendar dueDate = Calendar.getInstance();
+            dueDate.setTime(task.getDueDate());
+            dueDate.add(Calendar.DAY_OF_MONTH, 1);
+            task.setDueDate(dueDate.getTime());
+            Main.updateTask(task);
         }
 
         @Override
         public void onItemViewClicked(View v, boolean pinned, int position) {
-            launchTagActivity(tags.get(position).getId());
+            launchTaskActivity(tasks.get(position).getId());
         }
     }
 }

@@ -6,6 +6,7 @@
         <item name="colorAccent">@color/colorAccent</item>
         <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
         <item name="actionButtonStyle">@style/ActionButtonStyle</item>
+        <item name="searchViewStyle">@style/SearchViewStyle</item>
     </style>
 
     <style name="AppTheme.NoActionBar">
@@ -25,6 +26,23 @@
     <style name="ActionButtonStyle" parent="@style/Widget.AppCompat.DrawerArrowToggle">
         <item name="color">@color/colorSecondaryText</item>
     </style>
+
+    <style name="SearchViewStyle" parent="Widget.AppCompat.SearchView">
+    <!-- Background for the search query section (e.g. EditText)-->
+    <item name="queryBackground">@color/transparent</item>
+    <!-- Background for the actions section (e.g. voice, submit)-->
+    <item name="submitBackground">@color/transparent</item>
+    <!-- Close button icon -->
+    <item name="closeIcon">@color/colorSecondaryText</item>
+    <!-- Search button icon -->
+    <item name="searchIcon">@color/colorSecondaryText</item>
+    <!-- Go/commit button icon -->
+    <item name="goIcon">@color/colorSecondaryText</item>
+    <!-- Voice search button icon -->
+    <item name="voiceIcon">@color/colorSecondaryText</item>
+    <!-- Commit icon shown in the query suggestion row -->
+    <item name="commitIcon">@color/colorSecondaryText</item>
+</style>
 
     <style name="commonListItemStyle"></style>
 

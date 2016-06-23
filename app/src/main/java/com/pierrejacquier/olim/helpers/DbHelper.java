@@ -149,17 +149,25 @@ public class DbHelper extends SQLiteOpenHelper {
         return tag;
     }
 
-    public List<Task> getTasks() {
+    public List<Task> getTasks(Tag tag) {
+        String tagIdColString = null;
+        String[] tagIdStrings = null;
+
+        if (tag != null) {
+            tagIdColString = TASKS_TAG_COL + " LIKE ?";
+            tagIdStrings = new String[]{ String.valueOf(tag.getId()) };
+        }
+
         SQLiteDatabase db = getReadableDatabase();
 
         Cursor cursor = db.query(
                 TASKS_TABLE,
                 new String[]{TASKS_ID_COL, TASKS_TITLE_COL, TASKS_DUE_DATE_COL, TASKS_DONE_COL, TASKS_TAG_COL},
+                tagIdColString,
+                tagIdStrings,
                 null,
                 null,
-                null,
-                null,
-                null
+                TASKS_DUE_DATE_COL
         );
 
         List<Task> tasks = new ArrayList<>();
@@ -177,6 +185,10 @@ public class DbHelper extends SQLiteOpenHelper {
         cursor.close();
 
         return tasks;
+    }
+
+    public List<Task> getTasks() {
+        return getTasks(null);
     }
 
     public Tag getTag(long id) {
@@ -297,11 +309,6 @@ public class DbHelper extends SQLiteOpenHelper {
         return db.compileStatement(statement);
     }
 
-    private SQLiteStatement makeUpdateTaskStatement(SQLiteDatabase db) {
-        String statement =  "UPDATE " + TASKS_TABLE + " SET done = ? WHERE id = ?";
-        return db.compileStatement(statement);
-    }
-
     private SQLiteStatement makeInsertTagStatement(SQLiteDatabase db) {
         String statement =  "INSERT OR REPLACE INTO " + TAGS_TABLE + " (" +
                 TAGS_NAME_COL + "," +
@@ -312,7 +319,6 @@ public class DbHelper extends SQLiteOpenHelper {
         return db.compileStatement(statement);
     }
 
-    // Drop db method
     public void clearDatabase() {
         SQLiteDatabase db = getWritableDatabase();
         db.execSQL("DROP TABLE IF EXISTS " + TAGS_TABLE);
