@@ -71,6 +71,7 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Main.updateUserTags();
         setTags();
     }
 
@@ -95,7 +96,7 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
     }
 
     public interface OnFragmentInteractionListener {
-        void toast(String str);
+        void updateUserTags();
     }
 
     /**

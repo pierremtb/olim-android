@@ -13,16 +13,18 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.github.athingunique.ddbs.NewerDatabaseCallback;
-import com.github.athingunique.ddbs.drivelayer.DriveLayer;
-import com.github.athingunique.ddbs.drivelayer.FileResultsReadyCallback;
-import com.pierrejacquier.olim.helpers.DriveApiFactory;
+import com.google.android.gms.plus.Plus;
+import com.google.android.gms.plus.model.people.Person;
+import com.pierrejacquier.olim.Olim;
+import com.pierrejacquier.olim.data.User;
+import com.pierrejacquier.olim.helpers.drivelayer.DriveLayer;
+import com.pierrejacquier.olim.helpers.drivelayer.FileResultsReadyCallback;
+import com.pierrejacquier.olim.helpers.googleapi.DriveApiFactory;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.drive.DriveApi;
 import com.google.android.gms.drive.Metadata;
-import com.pierrejacquier.olim.activities.MainActivity;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,10 +67,12 @@ public class DriveSyncController implements FileResultsReadyCallback {
      */
     boolean ongoingRequest = false;
 
+    private Olim app;
+
     /**
      * Reference to the DriveLayer that provides abstracted access to the Drive AppFolder
      */
-    DriveLayer mDriveLayer;
+    DriveLayer driveLayer;
 
     /**
      * Reference to the local SQLite Database (if it exists)
@@ -84,21 +88,65 @@ public class DriveSyncController implements FileResultsReadyCallback {
     /**
      * The request Queue
      */
-    Queue<Integer> mRequestQueue;
+    Queue<Integer> requestQueue;
 
     /**
      * Callback to inform of local/cloud newer statuses
      */
     private NewerDatabaseCallback newerStatusCallback;
 
-    private GoogleApiClient mDriveClient;
+    private GoogleApiClient googleApiClient;
 
     public GoogleApiClient getGoogleApiClient() {
-        return mDriveClient;
+        return googleApiClient;
     }
 
     public interface GoogleApiClientCallbacks {
-        void onGoogleConnected();
+        void onGoogleConnected(Olim app);
+    }
+
+    private void callbackGoogleConnected(Context context) {
+        GoogleApiClientCallbacks gacc = (GoogleApiClientCallbacks) context;
+        gacc.onGoogleConnected(app);
+    }
+
+    private void fetchGoogle() {
+        Plus.PeopleApi.loadVisible(googleApiClient, null);
+        Person person = Plus.PeopleApi.getCurrentPerson(googleApiClient);
+        if (person != null) {
+            String fullName = person.getDisplayName();
+            String email = Plus.AccountApi.getAccountName(googleApiClient);
+            app.setCurrentUser(new User(fullName, email, null, null));
+            app.getCurrentUser().setCoverUrl(person.getCover().getCoverPhoto().getUrl());
+            app.getCurrentUser().setPictureUrl(person.getImage().getUrl());
+            Log.d("GoogleSyncContror@119", app.getCurrentUser().toString());
+//            if (person.hasImage()) {
+//
+//                Person.Image image = person.getImage();
+//
+//
+//                new AsyncTask<String, Void, Bitmap>() {
+//
+//                    @Override
+//                    protected Bitmap doInBackground(String... params) {
+//
+//                        try {
+//                            URL url = new URL(params[0]);
+//                            InputStream in = url.openStream();
+//                            return BitmapFactory.decodeStream(in);
+//                        } catch (Exception e) {
+//                        /* TODO log error */
+//                        }
+//                        return null;
+//                    }
+//
+//                    @Override
+//                    protected void onPostExecute(Bitmap bitmap) {
+////                                            personImageView.setImageBitmap(bitmap);
+//                    }
+//                }.execute(image.getUrl());
+//            }
+        }
     }
 
     /**
@@ -107,15 +155,15 @@ public class DriveSyncController implements FileResultsReadyCallback {
      * @param dbName the local SQLite Database name
      * @param newerStatusCallback the callback to notify of local/cloud newer status
      */
-    private DriveSyncController(final Context context, String dbName, NewerDatabaseCallback newerStatusCallback) {
-        mDriveClient = DriveApiFactory.getClient(context, new GoogleApiClient.ConnectionCallbacks() {
+    private DriveSyncController(final Context context, String dbName, NewerDatabaseCallback newerStatusCallback, Olim app) {
+        googleApiClient = DriveApiFactory.getClient(context, new GoogleApiClient.ConnectionCallbacks() {
                     @Override
                     public void onConnected(Bundle bundle) {
-                        // mDriveLayer.getFile(localDb.getName());
+                        // driveLayer.getFile(localDb.getName());
                         if (debug) {
-                            Log.d("DriveSyncController", "mDriveClient Connected");
-                            GoogleApiClientCallbacks gacc = new MainActivity();
-                            gacc.onGoogleConnected();
+                            Log.d("DriveSyncController", "googleApiClient Connected");
+                            fetchGoogle();
+                            callbackGoogleConnected(context);
                         }
                     }
 
@@ -123,7 +171,7 @@ public class DriveSyncController implements FileResultsReadyCallback {
                     public void onConnectionSuspended(int i) {
                         // Don't care
                         if (debug) {
-                            Log.d("DriveSyncController", "mDriveClient Suspended");
+                            Log.d("DriveSyncController", "googleApiClient Suspended");
                         }
                     }
                 },
@@ -132,7 +180,7 @@ public class DriveSyncController implements FileResultsReadyCallback {
                     public void onConnectionFailed(ConnectionResult connectionResult) {
 
                         if (debug) {
-                            Log.d("DriveSyncController", "mDriveClient Connection Failed");
+                            Log.d("DriveSyncController", "googleApiClient Connection Failed");
                             Log.d("DriveSyncController", connectionResult.toString());
                         }
 
@@ -154,14 +202,16 @@ public class DriveSyncController implements FileResultsReadyCallback {
                 debug
         );
 
+        this.app = app;
+
         if (debug) {
             Log.d("DriveSyncController", "Connecting mDriveApiClient");
         }
 
-        mDriveClient.connect();
+        googleApiClient.connect();
 
-        mDriveLayer = new DriveLayer(mDriveClient, this);
-        mDriveLayer.setDebug(debug);
+        driveLayer = new DriveLayer(googleApiClient, this);
+        driveLayer.setDebug(debug);
 
         if (debug) {
             Log.d("DriveSyncController", "Getting Database Path");
@@ -173,7 +223,7 @@ public class DriveSyncController implements FileResultsReadyCallback {
             Log.d("Database Path", localDb.toString());
         }
 
-        mRequestQueue = new LinkedList<>();
+        requestQueue = new LinkedList<>();
 
         this.newerStatusCallback = newerStatusCallback;
     }
@@ -185,8 +235,8 @@ public class DriveSyncController implements FileResultsReadyCallback {
      * @param newerStatusCallback the callback to notify of local/cloud newer status
      * @return a {@link DriveSyncController}
      */
-    public static DriveSyncController get(@NonNull Context context, @NonNull String dbName, @Nullable NewerDatabaseCallback newerStatusCallback) {
-        return new DriveSyncController(context, dbName, newerStatusCallback);
+    public static DriveSyncController get(@NonNull Context context, @NonNull String dbName, @Nullable NewerDatabaseCallback newerStatusCallback, Olim app) {
+        return new DriveSyncController(context, dbName, newerStatusCallback, app);
     }
 
     /**
@@ -196,8 +246,8 @@ public class DriveSyncController implements FileResultsReadyCallback {
      * @param newerStatusCallback the callback to notify of local/cloud newer status
      * @return a {@link DriveSyncController}
      */
-    public static DriveSyncController get(@NonNull Context context, @NonNull SQLiteOpenHelper dbHelper, @Nullable NewerDatabaseCallback newerStatusCallback) {
-        return new DriveSyncController(context, dbHelper.getDatabaseName(), newerStatusCallback);
+    public static DriveSyncController get(@NonNull Context context, @NonNull SQLiteOpenHelper dbHelper, @Nullable NewerDatabaseCallback newerStatusCallback, Olim app) {
+        return new DriveSyncController(context, dbHelper.getDatabaseName(), newerStatusCallback, app);
     }
 
     /**
@@ -216,22 +266,22 @@ public class DriveSyncController implements FileResultsReadyCallback {
     }
 
     private void queue(int key) {
-        mRequestQueue.add(key);
+        requestQueue.add(key);
         doQueue();
     }
 
     private void doQueue() {
         if (!ongoingRequest) {
-            if (mRequestQueue.size() > 0) {
+            if (requestQueue.size() > 0) {
                 ongoingRequest = true;
-                mDriveLayer.getFile(localDb.getName());
+                driveLayer.getFile(localDb.getName());
             }
         }
     }
 
     private int deQueue() {
-        if (mRequestQueue.size() > 0) {
-            int request = mRequestQueue.poll();
+        if (requestQueue.size() > 0) {
+            int request = requestQueue.poll();
             ongoingRequest = false;
             doQueue();
             return request;
@@ -295,10 +345,10 @@ public class DriveSyncController implements FileResultsReadyCallback {
      */
     @Override
     public void onMetaDataReceived(Metadata m) {
-        if (mRequestQueue.size() > 0) {
+        if (requestQueue.size() > 0) {
 
-            if (mRequestQueue.peek() == COMPARE) {
-                mRequestQueue.poll();
+            if (requestQueue.peek() == COMPARE) {
+                requestQueue.poll();
 
                 if (compareDriveLocalNewer(m.getModifiedDate())) {
                     newerStatusCallback.driveNewer();
@@ -325,14 +375,14 @@ public class DriveSyncController implements FileResultsReadyCallback {
         switch (which) {
             case PUT:
                 writeLocalDbToCloudStream(result.getDriveContents().getOutputStream());
-                result.getDriveContents().commit(mDriveClient, null);
+                result.getDriveContents().commit(googleApiClient, null);
                 break;
             case GET:
                 writeCloudStreamToLocalDb(result.getDriveContents().getInputStream());
                 break;
         }
         if (ongoingRequest) {
-            mDriveLayer.getFile(localDb.getName());
+            driveLayer.getFile(localDb.getName());
         }
     }
 
@@ -342,7 +392,7 @@ public class DriveSyncController implements FileResultsReadyCallback {
      */
     @Override
     public boolean openModeWriteable() {
-        switch (mRequestQueue.peek()) {
+        switch (requestQueue.peek()) {
             case PUT:
                 return true;
 

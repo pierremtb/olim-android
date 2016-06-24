@@ -12,6 +12,8 @@ public class User {
     private String email;
     private List<Task> tasks;
     private List<Tag> tags;
+    private String coverUrl;
+    private String pictureUrl;
 
     public User() {
         User(null, null, new ArrayList<Task>(), new ArrayList<Tag>());
@@ -30,6 +32,24 @@ public class User {
         this.email = email;
         this.tasks = tasks;
         this.tags = tags;
+        this.coverUrl = null;
+        this.pictureUrl = null;
+    }
+
+    public String getCoverUrl() {
+        return coverUrl;
+    }
+
+    public void setCoverUrl(String coverUrl) {
+        this.coverUrl = coverUrl;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public void setPictureUrl(String pictureUrl) {
+        this.pictureUrl = pictureUrl;
     }
 
     public String getFullName() {
@@ -41,17 +61,9 @@ public class User {
     }
 
     public List<Tag> getTags() {
-        /*
-        List <Tag> tags = new ArrayList<>();
-
-        Document[] tagsDocs = MeteorSingleton.getInstance()
-                .getDatabase()
-                .getCollection("Tags")
-                .find();
-        for (Document tag : tagsDocs) {
-            tags.add(new Tag(tag));
+        if (this.tags == null) {
+            return new ArrayList<>();
         }
-*/
         return this.tags;
     }
 
@@ -76,34 +88,9 @@ public class User {
     }
 
     public List<Task> getTasks(Tag tag, boolean excludeDone) {
-        List <Task> tasks = new ArrayList<>();
-
-        /*Query tasksQuery = MeteorSingleton.getInstance()
-                .getDatabase()
-                .getCollection("Tasks");
-
-        if (tag != null) {
-            tasksQuery.whereEqual("tag", tag.getId());
+        if (this.tasks == null) {
+            return new ArrayList<>();
         }
-
-        if (excludeDone) {
-            tasksQuery.whereEqual("done", false);
-        }
-
-        Document[] tasksDocs = tasksQuery.find();
-
-        for (Document task : tasksDocs) {
-            tasks.add(new Task());
-        }
-
-        Collections.sort(tasks, new Comparator<Task>() {
-
-            @Override
-            public int compare(Task task2, Task task1) {
-                return task2.getDueDate().compareTo(task1.getDueDate());
-            }
-        });*/
-
         return this.tasks;
     }
 

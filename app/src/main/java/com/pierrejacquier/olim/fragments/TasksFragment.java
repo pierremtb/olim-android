@@ -175,14 +175,6 @@ public class TasksFragment
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = (Olim) getActivity().getApplicationContext();
-        /*if (MeteorSingleton.getInstance().isLoggedIn()) {
-            Document userDoc = MeteorSingleton.getInstance().getDatabase()
-                                .getCollection("users")
-                                .getDocument(MeteorSingleton.getInstance().getUserId());
-            if (userDoc != null) {
-                app.setCurrentUser(new User(userDoc));
-            }
-        }*/
     }
 
     @Override
@@ -514,6 +506,10 @@ public class TasksFragment
 
         void updateTask(Task task);
 
+        void updateUserTasks();
+
+        void updateUserTags();
+
         Tag getTag(long id);
 
         void refreshData();
@@ -623,6 +619,8 @@ public class TasksFragment
     }
 
     public void reRenderTasks() {
+        Main.updateUserTasks();
+        Main.updateUserTags();
         fetchTasks(currentTag);
         displayTasks();
     }

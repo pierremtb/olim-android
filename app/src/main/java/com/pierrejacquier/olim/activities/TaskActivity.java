@@ -181,10 +181,11 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     private void applyTaskColor() {
         if (task == null) {
             finish();
+            return;
         }
 
         if (task.getTag() == null) {
-            finish();
+            return;
         }
 
         if (task.getTagId() == -1) {
@@ -203,6 +204,9 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
 
     private void applyTaskIcon() {
         if (task.getTagId() == -1) {
+            return;
+        }
+        if (task.getTag() == null) {
             return;
         }
 
@@ -247,13 +251,15 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
 
     private void setTask() {
         taskId = getIntent().getLongExtra("id", -1);
+
         if (taskId == -1) {
             finish();
             return;
-        } else {
-            task = getTask();
         }
+
+        task = getTask();
         binding.setTask(task);
+        Log.d("TaskActivity@258", task.toString());
         applyTaskColor();
         applyTaskIcon();
     }

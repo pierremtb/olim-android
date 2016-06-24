@@ -1,48 +1,30 @@
 package com.pierrejacquier.olim.activities;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
+import android.Manifest;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
-import android.databinding.DataBindingUtil;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.view.GravityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
-import android.widget.TextView;
+import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.plus.People;
-import com.google.android.gms.plus.Plus;
-import com.google.android.gms.plus.model.people.Person;
-import com.mikepenz.materialdrawer.holder.ImageHolder;
-import com.pierrejacquier.olim.helpers.DriveApiFactory;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.bumptech.glide.Glide;
 import com.pierrejacquier.olim.helpers.DriveSyncController;
-import com.github.athingunique.ddbs.NewerDatabaseCallback;
+import com.pierrejacquier.olim.helpers.NewerDatabaseCallback;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.iconics.context.IconicsContextWrapper;
 import com.mikepenz.materialdrawer.AccountHeader;
@@ -60,168 +42,59 @@ import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.data.User;
-import com.pierrejacquier.olim.databinding.NavHeaderMainBinding;
 import com.pierrejacquier.olim.fragments.LoadingFragment;
 import com.pierrejacquier.olim.fragments.TagsFragment;
 import com.pierrejacquier.olim.fragments.TasksFragment;
 import com.pierrejacquier.olim.helpers.DbHelper;
 
-import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 public class MainActivity
         extends AppCompatActivity
         implements NewerDatabaseCallback,
-            NavigationView.OnNavigationItemSelectedListener,
             TasksFragment.OnFragmentInteractionListener,
             TagsFragment.OnFragmentInteractionListener,
-        DriveSyncController.GoogleApiClientCallbacks
-        {
+            DriveSyncController.GoogleApiClientCallbacks {
 
     private Olim app;
-    private static final int RESOLVE_CONNECTION_REQUEST_CODE = 1;
-    public static MaterialDialog loadingDialog;
-    public static ActionBar actionBar;
-    private static final int REQUEST_LOGIN = 0;
+    private static final int MY_PERMISSIONS_REQUEST_GET_ACCOUNTS = 1;
+    private ActionBar actionBar;
     private String currentFragmentName = null;
-    private MenuItem filterMenu;
     private Menu actionsMenu;
-    private final int FILTER_MENU_POSITION = 1;
     private DbHelper dbHelper;
     private DriveSyncController syncController;
-    private GoogleApiClient googleApiClient;
-    private Bitmap profilePicture;
-    private AccountHeader headerResult;
-    private Drawer drawer;
     private Toolbar toolbar;
     
-    final static int DRAWER_TASKS = 0;
-    final static int DRAWER_TAGS = 1;
-    final static int DRAWER_SETTINGS = 2;
-    final static int DRAWER_SIGNOUT = 3;
-
-    TextView drawerFullName;
-    TextView drawerEmail;
-    NavigationView navView;
+    private final static int DRAWER_TASKS = 1;
+    private final static int DRAWER_TAGS = 2;
+    private final static int DRAWER_SETTINGS = 3;
+    private final static int DRAWER_SIGNOUT = 4;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         app = (Olim) getApplicationContext();
+        requestPermissions();
+
         String fullName = "User Name";
         String email = "user@name.do";
-        app.setCurrentUser(new User(fullName, email, null, null));
-        super.onCreate(savedInstanceState);
-        // Initiate SQLiteOpenHelper
         dbHelper = new DbHelper(this);
         List<Task> tasks = dbHelper.getTasks();
         List<Tag> tags = dbHelper.getTags();
-        fullName = "User Name";
-        email = "user@name.do";
         app.setCurrentUser(new User(fullName, email, tasks, tags));
 
-        Log.d("MainActivity@96", "ONCREATE");
-        // Initiate DriveSyncController
-        syncController = DriveSyncController.get(this, dbHelper, this).setDebug(true);
-
-        setContentView(R.layout.activity_main);
-
-
-
-        // Set data
-//        dbHelper.clearDatabase();
-//        Tag tag = new Tag().withName("First").withComments("Yeah").withColor("#000000").withIcon("add");
-//        dbHelper.insertTag(tag);
+        // Initiate SQLiteOpenHelper
+        syncController = DriveSyncController.get(this, dbHelper, this, app).setDebug(true);
 
         // Do some layout stuff
+        setContentView(R.layout.activity_main);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         actionBar = getSupportActionBar();
         actionBar.setElevation(0);
         actionBar.setTitle("Tasks");
-        headerResult = new AccountHeaderBuilder()
-                .withActivity(this)
-                .withHeaderBackground(R.drawable.background)
-                .addProfiles(
-                        new ProfileDrawerItem()
-                                .withName(app.getCurrentUser().getFullName())
-                                .withEmail("work@pierrejacquier.com")
-                                .withIcon(GoogleMaterial.Icon.gmd_account_circle)
-                )
-                .withOnAccountHeaderListener(new AccountHeader.OnAccountHeaderListener() {
-                    @Override
-                    public boolean onProfileChanged(View view, IProfile profile, boolean current) {
-                        return false;
-                    }
-                })
-                .build();
-        drawer = new DrawerBuilder()
-                .withActivity(this)
-                .withToolbar(toolbar)
-                .withAccountHeader(headerResult)
-                .addDrawerItems(
-                        new PrimaryDrawerItem()
-                                .withIdentifier(DRAWER_TASKS)
-                                .withName(R.string.navigation_drawer_tasks)
-                                .withIcon(GoogleMaterial.Icon.gmd_done_all),
-                        new PrimaryDrawerItem()
-                                .withIdentifier(DRAWER_TAGS)
-                                .withName(R.string.navigation_drawer_tags)
-                                .withIcon(GoogleMaterial.Icon.gmd_label_outline),
-                        new DividerDrawerItem(),
-                        new SecondaryDrawerItem()
-                                .withIdentifier(DRAWER_SETTINGS)
-                                .withName(R.string.navigation_drawer_settings)
-                                .withIcon(GoogleMaterial.Icon.gmd_settings)
-                        ,
-                        new SecondaryDrawerItem()
-                                .withIdentifier(DRAWER_SIGNOUT)
-                                .withName(R.string.navigation_drawer_signout)
-                                .withIcon(GoogleMaterial.Icon.gmd_exit_to_app)
-                )
-                .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
-                    @Override
-                    public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
-                        switch (position) {
-                            case DRAWER_TASKS:
-                                showTasksFragment();
-                                break;
-                            case DRAWER_TAGS:
-                                showTagsFragment();
-                                break;
-                            case DRAWER_SETTINGS:
-                                launchSettings();
-                                break;
-                            default: break;
-                        }
-                        return false;
-                    }
-                })
-                .build();
-//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-//        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-//                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-//        drawer.setDrawerListener(toggle);
-//        toggle.syncState();
-//        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-//        navigationView.setNavigationItemSelectedListener(this);
-//        NavHeaderMainBinding binding = DataBindingUtil.inflate(getLayoutInflater(), R.layout.nav_header_main, navigationView, false);
-//        navigationView.addHeaderView(binding.getRoot());
-//        binding.setUser(app.getCurrentUser());
-        prepareMenus();
         showTasksFragment();
-    }
-
-    @Override
-    public void onBackPressed() {
-//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-//        if (drawer.isDrawerOpen(GravityCompat.START)) {
-//            drawer.closeDrawer(GravityCompat.START);
-//        } else {
-            super.onBackPressed();
-//        }
     }
 
     @Override
@@ -253,7 +126,7 @@ public class MainActivity
             @Override
             public boolean onQueryTextChange(String newText) {
                 List<Task> tasks = dbHelper.getTasks(getTasksFragment().getCurrentTag());
-                List<Task> filteredTasks = new ArrayList<Task>();
+                List<Task> filteredTasks = new ArrayList<>();
                 if (newText.equals("")) {
                     filteredTasks = tasks;
                 } else {
@@ -294,31 +167,6 @@ public class MainActivity
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        switch (id) {
-            case R.id.navigation_drawer_tasks:
-                showTasksFragment();
-                break;
-            case R.id.navigation_drawer_tags:
-                showTagsFragment();
-                break;
-            case R.id.navigation_drawer_settings:
-                launchSettings();
-                break;
-            case R.id.navigation_drawer_signout:
-                if (app.getCurrentUser() != null) {
-                }
-                break;
-        }
-
-//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-//        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(IconicsContextWrapper.wrap(newBase));
@@ -327,15 +175,39 @@ public class MainActivity
     @Override
     public void driveNewer() {
         syncController.pullDbFromDrive();
-        toaster("Cloud newer");
+//        toast("Cloud newer");
         getTasksFragment().endRefreshing();
     }
 
     @Override
     public void localNewer() {
         syncController.putDbInDrive();
-        toaster("Local newer");
+//        toast("Local newer");
         getTasksFragment().endRefreshing();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+
+        // TODO: Handle permissions
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_GET_ACCOUNTS: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+        }
     }
 
     /**
@@ -391,45 +263,34 @@ public class MainActivity
      * Display handling methods
      */
 
-    private void updateCurrentView(String collectionName) {
-        if (currentFragmentName == null) {
-            return;
+    private void requestPermissions() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.GET_ACCOUNTS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.READ_CONTACTS)) {
+
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.GET_ACCOUNTS},
+                        MY_PERMISSIONS_REQUEST_GET_ACCOUNTS);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
         }
-
-        switch (currentFragmentName) {
-            case "TasksFragment":
-                if (collectionName.equals("Tasks")) {
-                    TasksFragment tasksFragment = (TasksFragment) getSupportFragmentManager()
-                                                    .findFragmentByTag("TasksFragment");
-                    //tasksFragment.reRenderTasks();
-                    showTasksFragment();
-                }
-                break;
-            case "TagsFragment":
-                if (collectionName.equals("Tags")) {
-                    showTagsFragment();
-                }
-                break;
-        }
-
     }
 
-    private void prepareMenus() {
-    }
-
-    private static void dismissLoadingDialog() {
-        loadingDialog.dismiss();
-    }
-
-    public void toast(String str) {
-        Context context = getApplicationContext();
-        CharSequence text = str;
-        int duration = Toast.LENGTH_SHORT;
-        Toast toast = Toast.makeText(context, text, duration);
-        toast.show();
-    }
-
-    private void toaster(String message) {
+    public void toast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
@@ -440,13 +301,19 @@ public class MainActivity
     public void insertTask(Task task) {
         dbHelper.insertTask(task);
         showTasksFragment();
-        updateUserTasks();
+        syncDb();
     }
 
     public void updateTask(Task task) {
         dbHelper.updateTask(task);
         showTasksFragment();
+        syncDb();
+    }
+
+    public void syncDb() {
         updateUserTasks();
+        syncController.isDriveDbNewer();
+        syncDb();
     }
 
     public Tag getTag(long id) {
@@ -457,36 +324,87 @@ public class MainActivity
         return dbHelper.getTasks(tag);
     }
 
-    public void setThisTaskStatus(long id, long status) {
-        dbHelper.setThisTaskStatus(id, status);
-        showTasksFragment();
-        updateUserTasks();
-    }
-
     public void updateUserTasks() {
         app.getCurrentUser().setTasks(dbHelper.getTasks());
+        syncDb();
+    }
+
+    public void updateUserTags() {
+        app.getCurrentUser().setTags(dbHelper.getTags());
+        syncDb();
     }
 
     public void refreshData() {
         syncController.isDriveDbNewer();
     }
 
-    //TODO: find a way to get account info
-    private String getAccountName() {
-        String possibleEmail = null;
-        Pattern emailPattern = Patterns.EMAIL_ADDRESS; // API level 8+
-        Account[] accounts = AccountManager.get(getApplicationContext()).getAccounts();
-        for (Account account : accounts) {
-            if (emailPattern.matcher(account.name).matches()) {
-                possibleEmail = account.name;
-            }
-        }
-        return possibleEmail;
-    }
-
     @Override
-    public void onGoogleConnected() {
-        Log.d("MainActivity@464", "GGGGGGGGGGGGGGGGGGGGGGGGGG " );
-        //Log.d("MainActivity@488", app.toString());
+    public void onGoogleConnected(Olim app) {
+        if (app == null) {
+            return;
+        }
+
+        AccountHeader headerResult = new AccountHeaderBuilder()
+                .withActivity(this)
+                .withHeaderBackground(R.drawable.background)
+                .addProfiles(
+                        new ProfileDrawerItem()
+                                .withName(app.getCurrentUser().getFullName())
+                                .withEmail(app.getCurrentUser().getEmail())
+                                .withIcon(app.getCurrentUser().getPictureUrl())
+                )
+                .withOnAccountHeaderListener(new AccountHeader.OnAccountHeaderListener() {
+                    @Override
+                    public boolean onProfileChanged(View view, IProfile profile, boolean current) {
+                        return false;
+                    }
+                })
+                .build();
+        new DrawerBuilder()
+                .withActivity(this)
+                .withToolbar(toolbar)
+                .withTranslucentStatusBar(true)
+                .withAccountHeader(headerResult)
+                .addDrawerItems(
+                        new PrimaryDrawerItem()
+                                .withIdentifier(DRAWER_TASKS)
+                                .withName(R.string.navigation_drawer_tasks)
+                                .withIcon(GoogleMaterial.Icon.gmd_done_all),
+                        new PrimaryDrawerItem()
+                                .withIdentifier(DRAWER_TAGS)
+                                .withName(R.string.navigation_drawer_tags)
+                                .withIcon(GoogleMaterial.Icon.gmd_label_outline),
+                        new DividerDrawerItem(),
+                        new SecondaryDrawerItem()
+                                .withIdentifier(DRAWER_SETTINGS)
+                                .withName(R.string.navigation_drawer_settings)
+                                .withIcon(GoogleMaterial.Icon.gmd_settings)
+                        ,
+                        new SecondaryDrawerItem()
+                                .withIdentifier(DRAWER_SIGNOUT)
+                                .withName(R.string.navigation_drawer_signout)
+                                .withIcon(GoogleMaterial.Icon.gmd_exit_to_app)
+                )
+                .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+                    @Override
+                    public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+                        switch (position) {
+                            case DRAWER_TASKS:
+                                showTasksFragment();
+                                break;
+                            case DRAWER_TAGS:
+                                showTagsFragment();
+                                break;
+                            case DRAWER_SETTINGS:
+                                launchSettings();
+                                break;
+                            default: break;
+                        }
+                        return false;
+                    }
+                })
+                .build();
+        ImageView coverView = headerResult.getHeaderBackgroundView();
+        Glide.with(this).load(app.getCurrentUser().getCoverUrl()).into(coverView);
     }
 }

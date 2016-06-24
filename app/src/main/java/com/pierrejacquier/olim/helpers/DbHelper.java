@@ -103,52 +103,6 @@ public class DbHelper extends SQLiteOpenHelper {
         insert.clearBindings();
     }
 
-    public Task getTaskFromDatabase() {
-        SQLiteDatabase db = getReadableDatabase();
-
-        Cursor cursor = db.query(
-                TASKS_TABLE,
-                new String[]{TASKS_ID_COL, TASKS_TITLE_COL, TASKS_DUE_DATE_COL, TASKS_DONE_COL, TASKS_TAG_COL},
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-
-        Task task = null;
-        if (cursor.moveToLast()) {
-            task = new Task(cursor);
-        }
-
-        cursor.close();
-
-        return task;
-    }
-
-    public Tag getTagFromDatabase() {
-        SQLiteDatabase db = getReadableDatabase();
-
-        Cursor cursor = db.query(
-                TAGS_TABLE,
-                new String[]{TAGS_ID_COL, TAGS_NAME_COL, TAGS_COMMENTS_COL, TAGS_COLOR_COL, TAGS_ICON_COL},
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-
-        Tag tag = null;
-        if (cursor.moveToLast()) {
-            tag = new Tag(cursor);
-        }
-
-        cursor.close();
-
-        return tag;
-    }
-
     public List<Task> getTasks(Tag tag) {
         String tagIdColString = null;
         String[] tagIdStrings = null;
@@ -224,6 +178,9 @@ public class DbHelper extends SQLiteOpenHelper {
         );
         if (cursorTask.moveToLast()) {
             task = new Task(cursorTask);
+            if (task.getTagId() != -1) {
+                task.setTag(getTag(task.getTagId()));
+            }
         }
         cursorTask.close();
         return task;
