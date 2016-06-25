@@ -1,52 +1,55 @@
 package com.pierrejacquier.olim.data;
 
-import android.support.annotation.NonNull;
-import android.util.Log;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-
-import im.delight.android.ddp.MeteorSingleton;
-import im.delight.android.ddp.db.Document;
-import im.delight.android.ddp.db.Query;
-
 import com.pierrejacquier.olim.helpers.Tools;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
 public class User {
-    private String id;
-    private String username;
     private String fullName;
     private String email;
+    private List<Task> tasks;
+    private List<Tag> tags;
+    private String coverUrl;
+    private String pictureUrl;
 
-    public User(Document userDoc) {
-        HashMap<String, Object> user = Tools.getMap(userDoc);
-        ArrayList<Object> emails = (ArrayList<Object>) user.get("emails");
-        HashMap<String, Object> profile = (HashMap<String, Object>) Tools.getObject(user, "profile", true);
-        HashMap<String, Object> email = (HashMap<String, Object>) emails.get(0);
-
-        this.id = Tools.getString(user, "_id");
-        this.username = Tools.getString(user, "username");
-        this.fullName = Tools.getString(profile, "fullName");
-        this.email = Tools.getString(email, "address");
+    public User() {
+        User(null, null, new ArrayList<Task>(), new ArrayList<Tag>());
     }
 
-    public String getUsername() {
-        return username;
+    public User(String fullName, String email) {
+        User(fullName, email, new ArrayList<Task>(), new ArrayList<Tag>());
     }
 
-    public String getId() {
-        return id;
+    public User(String fullName, String email, List<Task> tasks, List<Tag> tags) {
+        User(fullName, email, tasks, tags);
+    }
+
+    private void User(String fullName, String email, List<Task> tasks, List<Tag> tags) {
+        this.fullName = fullName;
+        this.email = email;
+        this.tasks = tasks;
+        this.tags = tags;
+        this.coverUrl = null;
+        this.pictureUrl = null;
+    }
+
+    public String getCoverUrl() {
+        return coverUrl;
+    }
+
+    public void setCoverUrl(String coverUrl) {
+        this.coverUrl = coverUrl;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public void setPictureUrl(String pictureUrl) {
+        this.pictureUrl = pictureUrl;
     }
 
     public String getFullName() {
@@ -58,22 +61,18 @@ public class User {
     }
 
     public List<Tag> getTags() {
-        List <Tag> tags = new ArrayList<>();
-
-        if (this.getId() == null) {
-            return tags;
+        if (this.tags == null) {
+            return new ArrayList<>();
         }
+        return this.tags;
+    }
 
-        Document[] tagsDocs = MeteorSingleton.getInstance()
-                .getDatabase()
-                .getCollection("Tags")
-                .whereEqual("owner", this.getId())
-                .find();
-        for (Document tag : tagsDocs) {
-            tags.add(new Tag(tag));
-        }
+    public void setTasks(List<Task> tasks) {
+        this.tasks = tasks;
+    }
 
-        return tags;
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
     }
 
     public List<Task> getTasks() {
@@ -89,40 +88,21 @@ public class User {
     }
 
     public List<Task> getTasks(Tag tag, boolean excludeDone) {
-        List <Task> tasks = new ArrayList<>();
-
-        if (this.getId() == null) {
-            return tasks;
+        if (this.tasks == null) {
+            return new ArrayList<>();
         }
-
-        Query tasksQuery = MeteorSingleton.getInstance()
-                .getDatabase()
-                .getCollection("Tasks")
-                .whereEqual("owner", this.getId());
-
-        if (tag != null) {
-            tasksQuery.whereEqual("tag", tag.getId());
-        }
-
+        
         if (excludeDone) {
-            tasksQuery.whereEqual("done", false);
-        }
-
-        Document[] tasksDocs = tasksQuery.find();
-
-        for (Document task : tasksDocs) {
-            tasks.add(new Task(task));
-        }
-
-        Collections.sort(tasks, new Comparator<Task>() {
-
-            @Override
-            public int compare(Task task2, Task task1) {
-                return task2.getDueDate().compareTo(task1.getDueDate());
+            List<Task> notDoneTasks = new ArrayList<>();
+            for (Task task : this.tasks) {
+                if (!task.isDone()) {
+                    notDoneTasks.add(task);
+                }
             }
-        });
-
-        return tasks;
+            return notDoneTasks;
+        }
+        
+        return this.tasks;
     }
 
     public List<Task> getOverdueTasks() {
@@ -144,9 +124,13 @@ public class User {
     public List<Task> getLaterTasks() {
         return getLaterTasks(null);
     }
-
+    
     public List<Task> getOverdueTasks(Tag tag) {
-        List<Task> tasks = this.getTasks(tag, true);
+        return getOverdueTasks(tag, false);
+    }
+
+    public List<Task> getOverdueTasks(Tag tag, boolean excludeDone) {
+        List<Task> tasks = this.getTasks(tag, excludeDone);
         List<Task> overdueTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
 
@@ -165,7 +149,11 @@ public class User {
     }
 
     public List<Task> getTodayTasks(Tag tag) {
-        List<Task> tasks = this.getTasks(tag);
+        return getTodayTasks(tag, false);
+    }
+
+    public List<Task> getTodayTasks(Tag tag, boolean excludeDone) {
+        List<Task> tasks = this.getTasks(tag, excludeDone);
         List<Task> todayTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
         Calendar today = Calendar.getInstance();
@@ -183,7 +171,12 @@ public class User {
     }
 
     public List<Task> getTomorrowTasks(Tag tag) {
-        List<Task> tasks = this.getTasks(tag);
+        return getTomorrowTasks(tag, false);
+    }
+
+
+    public List<Task> getTomorrowTasks(Tag tag, boolean excludeDone) {
+        List<Task> tasks = this.getTasks(tag, excludeDone);
         List<Task> tomorrowTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
         Calendar tomorrow = Calendar.getInstance();
@@ -201,7 +194,12 @@ public class User {
     }
 
     public List<Task> getInTheNextSevenDaysTasks(Tag tag) {
-        List<Task> tasks = this.getTasks(tag);
+        return getInTheNextSevenDaysTasks(tag, false);
+    }
+
+
+    public List<Task> getInTheNextSevenDaysTasks(Tag tag, boolean excludeDone) {
+        List<Task> tasks = this.getTasks(tag, excludeDone);
         List<Task> inTheNextSevenDaysTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
         Calendar inTheNextSevenDaysStart = Calendar.getInstance();
@@ -223,11 +221,16 @@ public class User {
     }
 
     public List<Task> getLaterTasks(Tag tag) {
-        List<Task> tasks = this.getTasks(tag);
+        return getLaterTasks(tag, false);
+    }
+
+
+    public List<Task> getLaterTasks(Tag tag, boolean excludeDone) {
+        List<Task> tasks = this.getTasks(tag, excludeDone);
         List<Task> laterTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
         Calendar inTheNextSevenDaysEnd = Calendar.getInstance();
-        inTheNextSevenDaysEnd.add(Calendar.DAY_OF_MONTH, 8);
+        inTheNextSevenDaysEnd.add(Calendar.DAY_OF_MONTH, 7);
         Tools.setStartOfDay(inTheNextSevenDaysEnd);
 
         for (Task task : tasks) {
@@ -259,5 +262,9 @@ public class User {
         }
         result.append("}");
         return result.toString();
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 }

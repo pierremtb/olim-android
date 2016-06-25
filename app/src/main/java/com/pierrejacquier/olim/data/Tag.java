@@ -1,37 +1,34 @@
 package com.pierrejacquier.olim.data;
 
-import com.pierrejacquier.olim.helpers.Tools;
+import android.database.Cursor;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
-
-import im.delight.android.ddp.db.Document;
 
 public class Tag {
-    private String id;
-    private String owner;
+    private long id;
     private String name;
     private String comments;
     private String color;
     private String icon;
 
-    public Tag(Document tagDoc) {
-        HashMap<String, Object> tag = Tools.getMap(tagDoc);
-
-        this.id = Tools.getString(tag, "_id");
-        this.owner = Tools.getString(tag, "owner");
-        this.name = Tools.getString(tag, "name");
-        this.comments = Tools.getString(tag, "comments");
-        this.color = Tools.getString(tag, "color");
-        this.icon = Tools.getString(tag, "icon");
+    public Tag(Cursor cursor) {
+        this.id = cursor.getLong(0);
+        this.name = cursor.getString(1);
+        this.comments = cursor.getString(2);
+        this.color = cursor.getString(3);
+        this.icon = cursor.getString(4);
     }
 
-    public String getId() {
+    public Tag() {
+        this.id = -1;
+        this.name = "";
+        this.comments = "";
+        this.color = "";
+        this.icon = "";
+    }
+
+    public long getId() {
         return id;
-    }
-
-    public String getOwner() {
-        return owner;
     }
 
     public String getName() {
@@ -42,16 +39,57 @@ public class Tag {
         return "#" + name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public Tag withName(String name) {
+        setName(name);
+        return this;
+    }
+
     public String getComments() {
         return comments;
     }
+    
+    public void setComments(String comments) {
+        this.comments = comments;
+    }
+
+    public Tag withComments(String comments) {
+        setComments(comments);
+        return this;
+    }
+
 
     public String getColor() {
         return color;
     }
 
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public Tag withColor(String color) {
+        setColor(color);
+        return this;
+    }
+
     public String getIcon() {
         return icon;
+    }
+
+    public String getIconicsName() {
+        return "gmd-" + this.icon.replace("_", "-").replace(" ", "-").toLowerCase();
+    }
+
+    public void setIcon(String icon) {
+        this.icon = icon;
+    }
+
+    public Tag withIcon(String icon) {
+        setIcon(icon);
+        return this;
     }
 
     public String toString() {

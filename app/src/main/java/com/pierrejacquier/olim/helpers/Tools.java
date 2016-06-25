@@ -12,20 +12,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 
-import im.delight.android.ddp.db.Document;
-
 public final class Tools {
-
-    public static HashMap<String, Object> getMap(Document doc) {
-        HashMap<String, Object> obj = new HashMap<>();
-        if(doc != null) {
-            for (String f : doc.getFieldNames()) {
-                obj.put(f, doc.getField(f));
-            }
-            obj.put("_id", doc.getId());
-        }
-        return obj;
-    }
 
     public static HashMap<String, Object> getMap(Object doc) {
         HashMap<String, Object> obj = new HashMap<>();
@@ -197,5 +184,19 @@ public final class Tools {
             InputMethodManager inputManager = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
             inputManager.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
         }
+    }
+
+    public static String toCamelCase(String s){
+        String[] parts = s.split("_");
+        String camelCaseString = "";
+        for (String part : parts){
+            camelCaseString = camelCaseString + toProperCase(part);
+        }
+        return Character.toLowerCase(camelCaseString.charAt(0)) + camelCaseString.substring(1);
+    }
+
+    public static String toProperCase(String s) {
+        return s.substring(0, 1).toUpperCase() +
+                s.substring(1).toLowerCase();
     }
 }

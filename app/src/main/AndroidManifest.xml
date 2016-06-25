@@ -3,6 +3,8 @@
     package="com.pierrejacquier.olim">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
         android:name=".Olim"
@@ -22,14 +24,16 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".activities.LoginActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".activities.SignupActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
             android:name=".activities.SettingsActivity"
-            android:label="@string/title_activity_settings"></activity>
+            android:label="@string/title_activity_settings" />
+        <activity
+            android:name=".activities.TagActivity"
+            android:label="@string/title_activity_tag"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".activities.TaskActivity"
+            android:label="@string/title_activity_task"
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>
