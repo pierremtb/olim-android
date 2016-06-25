@@ -16,6 +16,10 @@ public final class Graphics {
         return colorDrawable;
     }
 
+    public static ShapeDrawable createRoundDrawable(int color) {
+        return createRoundDrawable(intColorToHex(color));
+    }
+
     public static String intColorToHex(int color) {
         return "#" + Integer.toHexString(color).toUpperCase();
     }

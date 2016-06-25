@@ -96,7 +96,9 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
     }
 
     public interface OnFragmentInteractionListener {
-        void updateUserTags();
+        List<Tag> updateUserTags();
+
+        List<Tag> getTags();
     }
 
     /**
@@ -116,6 +118,7 @@ public class TagsFragment extends Fragment implements View.OnClickListener {
      */
 
     private void setTags() {
+        app.getCurrentUser().setTags(Main.getTags());
         tags = app.getCurrentUser().getTags();
         if (tags.size() > 0) {
             binding.tagsCard.setVisibility(View.VISIBLE);

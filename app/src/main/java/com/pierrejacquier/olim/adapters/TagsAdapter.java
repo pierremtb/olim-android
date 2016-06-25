@@ -1,6 +1,7 @@
 package com.pierrejacquier.olim.adapters;
 
 import android.content.Context;
+import android.databinding.DataBindingUtil;
 import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -13,6 +14,7 @@ import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.iconics.IconicsDrawable;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.data.Tag;
+import com.pierrejacquier.olim.databinding.ItemTagBinding;
 import com.pierrejacquier.olim.helpers.Graphics;
 
 import java.util.List;
@@ -29,16 +31,15 @@ public class TagsAdapter extends
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-
-        public TextView tagPrimaryText, tagSecondaryText;
-        public ImageButton tagIconButton;
+        private ItemTagBinding binding;
 
         public ViewHolder(View itemView) {
             super(itemView);
+            binding = DataBindingUtil.bind(itemView);
+        }
 
-            tagPrimaryText = (TextView) itemView.findViewById(R.id.tagPrimaryText);
-            tagSecondaryText = (TextView) itemView.findViewById(R.id.tagSecondaryText);
-            tagIconButton = (ImageButton) itemView.findViewById(R.id.tagIconButton);
+        public ItemTagBinding getBinding() {
+            return binding;
         }
     }
 
@@ -58,15 +59,13 @@ public class TagsAdapter extends
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, int position) {
         Tag tag = tags.get(position);
-
-        viewHolder.tagPrimaryText.setText(String.format("#%s", tag.getName()));
-        viewHolder.tagSecondaryText.setText(tag.getComments());
+        viewHolder.getBinding().setTag(tag);
 
         if (tag.getColor() != null) {
-            viewHolder.tagIconButton.setBackgroundDrawable(Graphics.createRoundDrawable(tag.getColor()));
+            viewHolder.getBinding().tagIconButton.setBackgroundDrawable(Graphics.createRoundDrawable(tag.getColor()));
         } else {
-            viewHolder.tagIconButton.setBackgroundDrawable(
-                    Graphics.createRoundDrawable(Graphics.intColorToHex(hintColor))
+            viewHolder.getBinding().tagIconButton.setBackgroundDrawable(
+                    Graphics.createRoundDrawable(hintColor)
             );
         }
 
@@ -80,7 +79,7 @@ public class TagsAdapter extends
             tagIcon.icon(GoogleMaterial.Icon.gmd_label_outline);
         }
 
-        viewHolder.tagIconButton.setImageDrawable(tagIcon);
+        viewHolder.getBinding().tagIconButton.setImageDrawable(tagIcon);
     }
 
     @Override

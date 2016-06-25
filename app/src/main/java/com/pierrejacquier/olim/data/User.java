@@ -91,6 +91,17 @@ public class User {
         if (this.tasks == null) {
             return new ArrayList<>();
         }
+        
+        if (excludeDone) {
+            List<Task> notDoneTasks = new ArrayList<>();
+            for (Task task : this.tasks) {
+                if (!task.isDone()) {
+                    notDoneTasks.add(task);
+                }
+            }
+            return notDoneTasks;
+        }
+        
         return this.tasks;
     }
 
@@ -113,9 +124,13 @@ public class User {
     public List<Task> getLaterTasks() {
         return getLaterTasks(null);
     }
-
+    
     public List<Task> getOverdueTasks(Tag tag) {
-        List<Task> tasks = this.getTasks(tag, true);
+        return getOverdueTasks(tag, false);
+    }
+
+    public List<Task> getOverdueTasks(Tag tag, boolean excludeDone) {
+        List<Task> tasks = this.getTasks(tag, excludeDone);
         List<Task> overdueTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
 
@@ -134,7 +149,11 @@ public class User {
     }
 
     public List<Task> getTodayTasks(Tag tag) {
-        List<Task> tasks = this.getTasks(tag);
+        return getTodayTasks(tag, false);
+    }
+
+    public List<Task> getTodayTasks(Tag tag, boolean excludeDone) {
+        List<Task> tasks = this.getTasks(tag, excludeDone);
         List<Task> todayTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
         Calendar today = Calendar.getInstance();
@@ -152,7 +171,12 @@ public class User {
     }
 
     public List<Task> getTomorrowTasks(Tag tag) {
-        List<Task> tasks = this.getTasks(tag);
+        return getTomorrowTasks(tag, false);
+    }
+
+
+    public List<Task> getTomorrowTasks(Tag tag, boolean excludeDone) {
+        List<Task> tasks = this.getTasks(tag, excludeDone);
         List<Task> tomorrowTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
         Calendar tomorrow = Calendar.getInstance();
@@ -170,7 +194,12 @@ public class User {
     }
 
     public List<Task> getInTheNextSevenDaysTasks(Tag tag) {
-        List<Task> tasks = this.getTasks(tag);
+        return getInTheNextSevenDaysTasks(tag, false);
+    }
+
+
+    public List<Task> getInTheNextSevenDaysTasks(Tag tag, boolean excludeDone) {
+        List<Task> tasks = this.getTasks(tag, excludeDone);
         List<Task> inTheNextSevenDaysTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
         Calendar inTheNextSevenDaysStart = Calendar.getInstance();
@@ -192,7 +221,12 @@ public class User {
     }
 
     public List<Task> getLaterTasks(Tag tag) {
-        List<Task> tasks = this.getTasks(tag);
+        return getLaterTasks(tag, false);
+    }
+
+
+    public List<Task> getLaterTasks(Tag tag, boolean excludeDone) {
+        List<Task> tasks = this.getTasks(tag, excludeDone);
         List<Task> laterTasks = new ArrayList<>();
         Calendar dueDate = Calendar.getInstance();
         Calendar inTheNextSevenDaysEnd = Calendar.getInstance();

@@ -1,24 +1,8 @@
-/*
- *    Copyright (C) 2015 Haruki Hasegawa
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-
 package com.pierrejacquier.olim.adapters;
 
+import android.databinding.DataBindingUtil;
 import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,6 +23,7 @@ import com.mikepenz.iconics.IconicsDrawable;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
+import com.pierrejacquier.olim.databinding.ItemTaskBinding;
 import com.pierrejacquier.olim.helpers.Graphics;
 
 import java.util.List;
@@ -48,7 +33,7 @@ public class SwipeableTaskAdapter
         implements SwipeableItemAdapter<SwipeableTaskAdapter.TaskViewHolder> {
     private static final String TAG = "MySwipeableItemAdapter";
 
-    // NOTE: Make accessible with short name
+    // TODO: create a latency compensation system (avoid updating the whole RVs)
     private interface Swipeable extends SwipeableItemConstants {
     }
 
@@ -69,22 +54,20 @@ public class SwipeableTaskAdapter
     }
 
     public static class TaskViewHolder extends AbstractSwipeableItemViewHolder {
-        public FrameLayout taskContainer;
-        public TextView taskPrimaryText;
-        public TextView taskSecondaryText;
-        public ImageButton taskTag;
+        private ItemTaskBinding binding;
 
         public TaskViewHolder(View v) {
             super(v);
-            taskContainer = (FrameLayout) v.findViewById(R.id.taskContainer);
-            taskPrimaryText = (TextView) v.findViewById(R.id.taskPrimaryText);
-            taskSecondaryText = (TextView) v.findViewById(R.id.taskSecondaryText);
-            taskTag = (ImageButton) v.findViewById(R.id.taskTag);
+            binding = DataBindingUtil.bind(v);
+        }
+
+        public ItemTaskBinding getBinding() {
+            return binding;
         }
 
         @Override
         public View getSwipeableContainerView() {
-            return taskContainer;
+            return binding.taskContainer;
         }
     }
 
@@ -102,9 +85,6 @@ public class SwipeableTaskAdapter
                 onSwipeableViewContainerClick(v);
             }
         };
-
-        // SwipeableItemAdapter requires stable ID, and also
-        // have to implement the getItemId() method appropriately.
         setHasStableIds(true);
     }
 
@@ -129,13 +109,12 @@ public class SwipeableTaskAdapter
     @Override
     public long getItemId(int position) {
         return tasks.get(position).getId();
-        //return position;
     }
 
     @Override
     public int getItemViewType(int position) {
-        //return tasks.get(position).getViewType();
         return 0;
+        // TODO: investigate the icons/colors bug when swiping
     }
 
     @Override
@@ -151,20 +130,19 @@ public class SwipeableTaskAdapter
     public void onBindViewHolder(TaskViewHolder holder, int position) {
         final Task task = tasks.get(position);
 
-        // set listeners
-        // (if the item is *pinned*, click event comes to the itemView)
-        holder.itemView.setOnClickListener(mItemViewOnClickListener);
-        // (if the item is *not pinned*, click event comes to the taskContainer)
-        holder.taskContainer.setOnClickListener(mSwipeableViewContainerOnClickListener);
+        holder.getBinding().setTask(task);
+        holder.getBinding().executePendingBindings();
 
-        // set text
-        holder.taskPrimaryText.setText(task.getTitle());
-        holder.taskSecondaryText.setText(task.getDueDate().toLocaleString());
+        holder.getBinding().taskLayout.setOnClickListener(mItemViewOnClickListener);
+        holder.itemView.setOnClickListener(mItemViewOnClickListener);
+        holder.getBinding().taskContainer.setOnClickListener(mSwipeableViewContainerOnClickListener);
+
         if (task.getTag() != null) {
             Tag tag = task.getTag();
             if (!task.isDone()) {
                 if (tag.getColor() != null) {
-                    holder.taskTag.setBackgroundDrawable(Graphics.createRoundDrawable(tag.getColor()));
+                    holder.getBinding().taskIconButton
+                            .setBackgroundDrawable(Graphics.createRoundDrawable(tag.getColor()));
                 }
             } else if (tag.getColor() != null) {
                 tagIcon.color(Color.parseColor(tag.getColor()));
@@ -172,9 +150,8 @@ public class SwipeableTaskAdapter
                 tagIcon.color(hintColor);
             }
             if (tag.getIcon() != null) {
-                String iconName;
                 try {
-                    tagIcon.icon(GoogleMaterial.Icon.valueOf("gmd_" + tag.getIcon()));
+                    tagIcon.icon(tag.getIconicsName());
                 } catch (Exception e ) {
                     tagIcon.icon(GoogleMaterial.Icon.gmd_label_outline);
                 }
@@ -186,19 +163,18 @@ public class SwipeableTaskAdapter
             if (task.isDone()) {
                 tagIcon.color(hintColor);
             } else {
-                holder.taskTag.setBackgroundDrawable(
+                holder.getBinding().taskIconButton.setBackgroundDrawable(
                         Graphics.createRoundDrawable(Graphics.intColorToHex(hintColor))
                 );
             }
         }
         if (task.isDone()) {
-            holder.taskTag.setAlpha(Float.valueOf("0.6"));
-            holder.taskPrimaryText.setTextColor(hintColor);
+            holder.getBinding().taskIconButton.setAlpha(Float.valueOf("0.6"));
+            holder.getBinding().taskPrimaryText.setTextColor(hintColor);
         }
 
-        holder.taskTag.setImageDrawable(tagIcon);
+        holder.getBinding().taskIconButton.setImageDrawable(tagIcon);
 
-        // set background resource (target view ID: container)
         final int swipeState = holder.getSwipeStateFlags();
 
         if ((swipeState & Swipeable.STATE_FLAG_IS_UPDATED) != 0) {
@@ -212,12 +188,10 @@ public class SwipeableTaskAdapter
                 bgResId = R.drawable.bg_item_normal_state;
             }
 
-            holder.taskContainer.setBackgroundResource(bgResId);
+            holder.getBinding().taskContainer.setBackgroundResource(bgResId);
         }
 
-        // set swiping properties
-        holder.setSwipeItemHorizontalSlideAmount(
-                /*task.isPinned() ? Swipeable.OUTSIDE_OF_THE_WINDOW_LEFT :*/ 0);
+        holder.setSwipeItemHorizontalSlideAmount(0);
     }
 
     @Override
@@ -251,19 +225,10 @@ public class SwipeableTaskAdapter
     @Override
     public SwipeResultAction onSwipeItem(TaskViewHolder holder, final int position, int result) {
         switch (result) {
-            // swipe right
             case Swipeable.RESULT_SWIPED_RIGHT:
-                if (/*tasks.get(position).isPinned()*/false) {
-                    // pinned --- back to default position
-                    return new UnpinResultAction(this, position);
-                } else {
-                    // not pinned --- remove
-                    return new SwipeRightResultAction(this, position);
-                }
-                // swipe left -- pin
+                return new SwipeRightResultAction(this, position);
             case Swipeable.RESULT_SWIPED_LEFT:
                 return new SwipeLeftResultAction(this, position);
-            // other --- do nothing
             case Swipeable.RESULT_CANCELED:
             default:
                 if (position != RecyclerView.NO_POSITION) {
@@ -296,13 +261,8 @@ public class SwipeableTaskAdapter
         protected void onPerformAction() {
             super.onPerformAction();
 
-            Task task = mAdapter.tasks.get(mPosition);
-
-            if (/*!task.isPinned()*/ true) {
-                //task.setPinned(true);
-                mAdapter.notifyItemChanged(mPosition);
-                mSetPinned = true;
-            }
+            mAdapter.notifyItemChanged(mPosition);
+            mSetPinned = true;
         }
 
         @Override
@@ -369,10 +329,8 @@ public class SwipeableTaskAdapter
             super.onPerformAction();
 
             Task task = mAdapter.tasks.get(mPosition);
-            if (/*task.isPinned()*/ true) {
-                //task.setPinned(false);
-                mAdapter.notifyItemChanged(mPosition);
-            }
+            //task.setPinned(false);
+            mAdapter.notifyItemChanged(mPosition);
         }
 
         @Override

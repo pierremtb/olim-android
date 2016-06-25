@@ -79,6 +79,10 @@ public class Tag {
         return icon;
     }
 
+    public String getIconicsName() {
+        return "gmd-" + this.icon.replace("_", "-").replace(" ", "-").toLowerCase();
+    }
+
     public void setIcon(String icon) {
         this.icon = icon;
     }

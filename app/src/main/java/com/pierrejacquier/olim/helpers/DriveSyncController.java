@@ -13,6 +13,11 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.drive.DriveApi;
+import com.google.android.gms.drive.Metadata;
 import com.google.android.gms.plus.Plus;
 import com.google.android.gms.plus.model.people.Person;
 import com.pierrejacquier.olim.Olim;
@@ -20,11 +25,6 @@ import com.pierrejacquier.olim.data.User;
 import com.pierrejacquier.olim.helpers.drivelayer.DriveLayer;
 import com.pierrejacquier.olim.helpers.drivelayer.FileResultsReadyCallback;
 import com.pierrejacquier.olim.helpers.googleapi.DriveApiFactory;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.drive.DriveApi;
-import com.google.android.gms.drive.Metadata;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -119,33 +119,6 @@ public class DriveSyncController implements FileResultsReadyCallback {
             app.setCurrentUser(new User(fullName, email, null, null));
             app.getCurrentUser().setCoverUrl(person.getCover().getCoverPhoto().getUrl());
             app.getCurrentUser().setPictureUrl(person.getImage().getUrl());
-            Log.d("GoogleSyncContror@119", app.getCurrentUser().toString());
-//            if (person.hasImage()) {
-//
-//                Person.Image image = person.getImage();
-//
-//
-//                new AsyncTask<String, Void, Bitmap>() {
-//
-//                    @Override
-//                    protected Bitmap doInBackground(String... params) {
-//
-//                        try {
-//                            URL url = new URL(params[0]);
-//                            InputStream in = url.openStream();
-//                            return BitmapFactory.decodeStream(in);
-//                        } catch (Exception e) {
-//                        /* TODO log error */
-//                        }
-//                        return null;
-//                    }
-//
-//                    @Override
-//                    protected void onPostExecute(Bitmap bitmap) {
-////                                            personImageView.setImageBitmap(bitmap);
-//                    }
-//                }.execute(image.getUrl());
-//            }
         }
     }
 
@@ -155,16 +128,18 @@ public class DriveSyncController implements FileResultsReadyCallback {
      * @param dbName the local SQLite Database name
      * @param newerStatusCallback the callback to notify of local/cloud newer status
      */
-    private DriveSyncController(final Context context, String dbName, NewerDatabaseCallback newerStatusCallback, Olim app) {
+    private DriveSyncController(final Context context, String dbName, NewerDatabaseCallback newerStatusCallback, Olim app, final boolean googleAuthorized) {
         googleApiClient = DriveApiFactory.getClient(context, new GoogleApiClient.ConnectionCallbacks() {
                     @Override
                     public void onConnected(Bundle bundle) {
                         // driveLayer.getFile(localDb.getName());
                         if (debug) {
                             Log.d("DriveSyncController", "googleApiClient Connected");
-                            fetchGoogle();
-                            callbackGoogleConnected(context);
                         }
+                        if (googleAuthorized) {
+                            fetchGoogle();
+                        }
+                        callbackGoogleConnected(context);
                     }
 
                     @Override
@@ -235,8 +210,8 @@ public class DriveSyncController implements FileResultsReadyCallback {
      * @param newerStatusCallback the callback to notify of local/cloud newer status
      * @return a {@link DriveSyncController}
      */
-    public static DriveSyncController get(@NonNull Context context, @NonNull String dbName, @Nullable NewerDatabaseCallback newerStatusCallback, Olim app) {
-        return new DriveSyncController(context, dbName, newerStatusCallback, app);
+    public static DriveSyncController get(@NonNull Context context, @NonNull String dbName, @Nullable NewerDatabaseCallback newerStatusCallback, Olim app, boolean googleAuthorized) {
+        return new DriveSyncController(context, dbName, newerStatusCallback, app, googleAuthorized);
     }
 
     /**
@@ -246,8 +221,8 @@ public class DriveSyncController implements FileResultsReadyCallback {
      * @param newerStatusCallback the callback to notify of local/cloud newer status
      * @return a {@link DriveSyncController}
      */
-    public static DriveSyncController get(@NonNull Context context, @NonNull SQLiteOpenHelper dbHelper, @Nullable NewerDatabaseCallback newerStatusCallback, Olim app) {
-        return new DriveSyncController(context, dbHelper.getDatabaseName(), newerStatusCallback, app);
+    public static DriveSyncController get(@NonNull Context context, @NonNull SQLiteOpenHelper dbHelper, @Nullable NewerDatabaseCallback newerStatusCallback, Olim app, boolean googleAuthorized) {
+        return new DriveSyncController(context, dbHelper.getDatabaseName(), newerStatusCallback, app, googleAuthorized);
     }
 
     /**

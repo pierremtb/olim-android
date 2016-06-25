@@ -9,8 +9,6 @@ import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.text.InputType;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,7 +24,8 @@ import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.databinding.ActivityTagBinding;
 import com.pierrejacquier.olim.helpers.DbHelper;
 import com.pierrejacquier.olim.helpers.Graphics;
-import com.pierrejacquier.olim.helpers.Tools;
+
+import java.util.Random;
 
 public class TagActivity extends AppCompatActivity implements ColorChooserDialog.ColorCallback {
 
@@ -154,7 +153,7 @@ public class TagActivity extends AppCompatActivity implements ColorChooserDialog
 
     private void applyTagIcon() {
         binding.iconTagIcon
-                .setIcon("gmd-" + tag.getIcon().replace("_", "-").replace(" ", "-").toLowerCase());
+                .setIcon(tag.getIconicsName());
     }
 
     /**
@@ -168,7 +167,9 @@ public class TagActivity extends AppCompatActivity implements ColorChooserDialog
     private void setTag() {
         tagId = getIntent().getLongExtra("id", -1);
         if (tagId == -1) {
-            tag = new Tag().withName("Hey").withIcon("add").withComments("anruise").withColor("#000000");
+            String[] colors = new String[]{"#F44336","#E91E63","#9C27B0","#673AB7","#3F51B5","#2196F3","#009688","#4CAF50","#FF5722","#795548","#607D8B"};
+            int idx = new Random().nextInt(colors.length);
+            tag = new Tag().withIcon("label").withColor(colors[idx]);
         } else {
             tag = getTag();
         }

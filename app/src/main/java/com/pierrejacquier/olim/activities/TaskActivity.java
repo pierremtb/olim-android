@@ -9,25 +9,20 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.text.InputType;
-import android.util.Log;
+import android.text.format.DateFormat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.AdapterView;
 import android.widget.DatePicker;
-import android.widget.ListView;
 import android.widget.TimePicker;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.color.ColorChooserDialog;
 import com.pierrejacquier.olim.Olim;
 import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.adapters.TagsListAdapter;
@@ -36,10 +31,8 @@ import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.databinding.ActivityTaskBinding;
 import com.pierrejacquier.olim.helpers.DbHelper;
 import com.pierrejacquier.olim.helpers.Graphics;
-import com.pierrejacquier.olim.helpers.Tools;
 
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 public class TaskActivity extends AppCompatActivity implements View.OnClickListener {
@@ -101,8 +94,8 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
             public void onClick(View view) {
                 Calendar taskDueDate = Calendar.getInstance();
                 taskDueDate.setTime(task.getDueDate());
-                int taskHour = taskDueDate.get(Calendar.YEAR);
-                int taskMinute = taskDueDate.get(Calendar.MONTH);
+                int taskHour = taskDueDate.get(Calendar.HOUR_OF_DAY);
+                int taskMinute = taskDueDate.get(Calendar.MINUTE);
                 timePickerDialog = new TimePickerDialog(context,
                         new TimePickerDialog.OnTimeSetListener() {
                             @Override
@@ -112,7 +105,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                                 binding.setTask(task);
 
                             }
-                        }, taskHour, taskMinute, false);
+                        }, taskHour, taskMinute, DateFormat.is24HourFormat(context));
                 timePickerDialog.show();
             }
         });
@@ -165,6 +158,21 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         tags = app.getCurrentUser().getTags();
         createTagsDialog(this);
         tagsFilteringDialog.show();
+    }
+
+    @Override
+    public void onClick(View v) {
+        Tag tag = (Tag) v.getTag();
+        if (getResources().getResourceName(v.getId()).equals("com.pierrejacquier.olim:id/tagEdit")) {
+            launchTagActivity(tag.getId());
+            tagsFilteringDialog.dismiss();
+        } else {
+            tagsFilteringDialog.dismiss();
+            task.setTag(tag);
+            binding.setTask(task);
+            applyTaskColor();
+            applyTaskIcon();
+        }
     }
 
     @Override
@@ -259,7 +267,6 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
 
         task = getTask();
         binding.setTask(task);
-        Log.d("TaskActivity@258", task.toString());
         applyTaskColor();
         applyTaskIcon();
     }
@@ -272,16 +279,6 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     private void removeTask() {
         dbHelper.removeTask(task);
         finish();
-    }
-
-    @Override
-    public void onClick(View v) {
-        int key = Integer.valueOf(v.getTag().toString());
-        tagsFilteringDialog.dismiss();
-        task.setTag(tags.get(key));
-        binding.setTask(task);
-        applyTaskColor();
-        applyTaskIcon();
     }
 
     /**

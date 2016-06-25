@@ -4,8 +4,10 @@ import android.Manifest;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -16,6 +18,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,8 +26,8 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.pierrejacquier.olim.helpers.DriveSyncController;
-import com.pierrejacquier.olim.helpers.NewerDatabaseCallback;
+import com.mikepenz.aboutlibraries.Libs;
+import com.mikepenz.aboutlibraries.LibsBuilder;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.iconics.context.IconicsContextWrapper;
 import com.mikepenz.materialdrawer.AccountHeader;
@@ -46,6 +49,8 @@ import com.pierrejacquier.olim.fragments.LoadingFragment;
 import com.pierrejacquier.olim.fragments.TagsFragment;
 import com.pierrejacquier.olim.fragments.TasksFragment;
 import com.pierrejacquier.olim.helpers.DbHelper;
+import com.pierrejacquier.olim.helpers.DriveSyncController;
+import com.pierrejacquier.olim.helpers.NewerDatabaseCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,17 +70,18 @@ public class MainActivity
     private DbHelper dbHelper;
     private DriveSyncController syncController;
     private Toolbar toolbar;
-    
+    private Drawer drawer = null;
+
     private final static int DRAWER_TASKS = 1;
     private final static int DRAWER_TAGS = 2;
-    private final static int DRAWER_SETTINGS = 3;
-    private final static int DRAWER_SIGNOUT = 4;
+    private final static int DRAWER_DIVIDER = 3;
+    private final static int DRAWER_SETTINGS = 4;
+    private final static int DRAWER_ABOUT = 5;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = (Olim) getApplicationContext();
-        requestPermissions();
 
         String fullName = "User Name";
         String email = "user@name.do";
@@ -84,16 +90,16 @@ public class MainActivity
         List<Tag> tags = dbHelper.getTags();
         app.setCurrentUser(new User(fullName, email, tasks, tags));
 
-        // Initiate SQLiteOpenHelper
-        syncController = DriveSyncController.get(this, dbHelper, this, app).setDebug(true);
-
         // Do some layout stuff
         setContentView(R.layout.activity_main);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         actionBar = getSupportActionBar();
-        actionBar.setElevation(0);
-        actionBar.setTitle("Tasks");
+        if (actionBar != null) {
+            actionBar.setTitle("Tasks");
+            // TODO: set an elevation when scrolling
+        }
+        requestPermissions();
         showTasksFragment();
     }
 
@@ -101,7 +107,7 @@ public class MainActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
         actionsMenu = menu;
-
+        // TODO: fix the missing Close action
         final SearchView searchView = (SearchView) MenuItemCompat.getActionView(menu.findItem(R.id.action_search));
         SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
@@ -138,7 +144,7 @@ public class MainActivity
                     }
                 }
                 app.getCurrentUser().setTasks(filteredTasks);
-                getTasksFragment().reRenderTasks();
+                getTasksFragment().reRenderTasksTemp();
                 return false;
             }
         });
@@ -175,14 +181,14 @@ public class MainActivity
     @Override
     public void driveNewer() {
         syncController.pullDbFromDrive();
-//        toast("Cloud newer");
+        toast("Cloud newer");
         getTasksFragment().endRefreshing();
     }
 
     @Override
     public void localNewer() {
         syncController.putDbInDrive();
-//        toast("Local newer");
+        toast("Local newer");
         getTasksFragment().endRefreshing();
     }
 
@@ -190,22 +196,14 @@ public class MainActivity
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[],
                                            @NonNull int[] grantResults) {
-
-        // TODO: Handle permissions
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_GET_ACCOUNTS: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
-
+                    startSync(true);
                 } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
+                    startSync(false);
                 }
-                return;
             }
         }
     }
@@ -224,15 +222,15 @@ public class MainActivity
     }
 
     private void showTagsFragment() {
-        if (actionsMenu != null) {
-            MenuItem item = actionsMenu.getItem(0);
-            item.setIcon(getResources().getDrawable(R.drawable.ic_add));
-            if (item != null) {
-                // TODO: make it disappear for real -_-
-                item.setVisible(false);
-                ActivityCompat.invalidateOptionsMenu(this);
-            }
-        }
+//        if (actionsMenu != null) {
+//            MenuItem item = actionsMenu.getItem(0);
+//            item.setIcon(getResources().getDrawable(R.drawable.ic_add));
+//            if (item != null) {
+//                // TODO: make Filter and Search actions disappear on TagsFragment
+//                item.setVisible(false);
+//                ActivityCompat.invalidateOptionsMenu(this);
+//            }
+//        }
         Fragment TagsFG = new TagsFragment();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.mainFrame, TagsFG);
@@ -259,6 +257,16 @@ public class MainActivity
         startActivity(intent);
     }
 
+    private void launchAbout() {
+        new LibsBuilder()
+                .withActivityStyle(Libs.ActivityStyle.LIGHT_DARK_TOOLBAR)
+                .withActivityTitle(getResources().getString(R.string.navigation_drawer_about))
+                .withAboutIconShown(true)
+                .withAboutVersionShown(true)
+                .withAboutDescription(getResources().getString(R.string.app_description))
+                .start(this);
+    }
+
     /**
      * Display handling methods
      */
@@ -271,26 +279,21 @@ public class MainActivity
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.READ_CONTACTS)) {
 
-                // Show an expanation to the user *asynchronously* -- don't block
+                // TODO: Show an expanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
 
             } else {
-
-                // No explanation needed, we can request the permission.
-
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.GET_ACCOUNTS},
                         MY_PERMISSIONS_REQUEST_GET_ACCOUNTS);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
             }
+        } else {
+            startSync(true);
         }
     }
 
-    public void toast(String message) {
+    private void toast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
@@ -298,22 +301,24 @@ public class MainActivity
      * Data handling methods
      */
 
+    private void startSync(boolean googleAuthorized) {
+        syncController = DriveSyncController.get(this, dbHelper, this, app, googleAuthorized).setDebug(true);
+    }
+
     public void insertTask(Task task) {
         dbHelper.insertTask(task);
         showTasksFragment();
-        syncDb();
     }
 
     public void updateTask(Task task) {
         dbHelper.updateTask(task);
         showTasksFragment();
-        syncDb();
     }
 
     public void syncDb() {
-        updateUserTasks();
         syncController.isDriveDbNewer();
-        syncDb();
+        updateUserTasks();
+        updateUserTags();
     }
 
     public Tag getTag(long id) {
@@ -324,14 +329,20 @@ public class MainActivity
         return dbHelper.getTasks(tag);
     }
 
-    public void updateUserTasks() {
-        app.getCurrentUser().setTasks(dbHelper.getTasks());
-        syncDb();
+    public List<Tag> getTags() {
+        return dbHelper.getTags();
     }
 
-    public void updateUserTags() {
+    public List<Task> updateUserTasks() {
+        List<Task> tasks = dbHelper.getTasks();
+        app.getCurrentUser().setTasks(dbHelper.getTasks());
+        return tasks;
+    }
+
+    public List<Tag> updateUserTags() {
+        List<Tag> tags = dbHelper.getTags();
         app.getCurrentUser().setTags(dbHelper.getTags());
-        syncDb();
+        return tags;
     }
 
     public void refreshData() {
@@ -360,7 +371,7 @@ public class MainActivity
                     }
                 })
                 .build();
-        new DrawerBuilder()
+        drawer = new DrawerBuilder()
                 .withActivity(this)
                 .withToolbar(toolbar)
                 .withTranslucentStatusBar(true)
@@ -374,16 +385,17 @@ public class MainActivity
                                 .withIdentifier(DRAWER_TAGS)
                                 .withName(R.string.navigation_drawer_tags)
                                 .withIcon(GoogleMaterial.Icon.gmd_label_outline),
-                        new DividerDrawerItem(),
+                        new DividerDrawerItem().withIdentifier(DRAWER_DIVIDER),
                         new SecondaryDrawerItem()
                                 .withIdentifier(DRAWER_SETTINGS)
                                 .withName(R.string.navigation_drawer_settings)
                                 .withIcon(GoogleMaterial.Icon.gmd_settings)
-                        ,
+                                .withSelectable(false),
                         new SecondaryDrawerItem()
-                                .withIdentifier(DRAWER_SIGNOUT)
-                                .withName(R.string.navigation_drawer_signout)
-                                .withIcon(GoogleMaterial.Icon.gmd_exit_to_app)
+                                .withIdentifier(DRAWER_ABOUT)
+                                .withName(R.string.navigation_drawer_about)
+                                .withIcon(GoogleMaterial.Icon.gmd_info_outline)
+                                .withSelectable(false)
                 )
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
@@ -397,6 +409,9 @@ public class MainActivity
                                 break;
                             case DRAWER_SETTINGS:
                                 launchSettings();
+                                break;
+                            case DRAWER_ABOUT:
+                                launchAbout();
                                 break;
                             default: break;
                         }

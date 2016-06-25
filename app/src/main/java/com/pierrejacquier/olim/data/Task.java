@@ -1,16 +1,12 @@
 package com.pierrejacquier.olim.data;
 
 import android.database.Cursor;
-import android.util.Log;
 
 import java.lang.reflect.Field;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 public class Task {
@@ -39,6 +35,16 @@ public class Task {
         this.dueDate = new Date(cursor.getLong(2));
         this.done = cursor.getLong(3) == 1;
         this.tagId = cursor.getLong(4);
+        this.reminder = null;
+        this.tag = null;
+    }
+
+    public Task(String title, Date dueDate) {
+        this.id = -1;
+        this.title = title;
+        this.dueDate = dueDate;
+        this.done = false;
+        this.tagId = -1;
         this.reminder = null;
         this.tag = null;
     }
@@ -92,12 +98,12 @@ public class Task {
     }
 
     public String dispDueDate() {
-        return DateFormat.getInstance().getDateInstance().format(dueDate);
+        return DateFormat.getDateInstance(DateFormat.SHORT).format(dueDate);
     }
 
 
     public String dispDueTime() {
-        return DateFormat.getInstance().getTimeInstance().format(dueDate);
+        return DateFormat.getTimeInstance(DateFormat.SHORT).format(dueDate);
     }
 
     public void setDueDate(Date dueDate) {
@@ -120,7 +126,7 @@ public class Task {
     public void setDueDate(int hour, int minute) {
         Calendar date = Calendar.getInstance();
         date.setTime(dueDate);
-        date.set(Calendar.HOUR, hour);
+        date.set(Calendar.HOUR_OF_DAY, hour);
         date.set(Calendar.MINUTE, minute);
         date.set(Calendar.SECOND, 0);
         date.set(Calendar.MILLISECOND, 0);
@@ -164,76 +170,21 @@ public class Task {
     public Map<String, Object> getObject() {
         Map<String, Object> task = new HashMap<>();
         if (this.title != null) {
-           task.put("title", this.title);
+            task.put("title", this.title);
         }
         if (this.tagId != -1) {
-           task.put("tag", this.tag);
+            task.put("tag", this.tag);
         }
         if (this.dueDate != null) {
-           task.put("dueDate", this.dueDate);
+            task.put("dueDate", this.dueDate);
         }
         if (this.reminder != null) {
-           task.put("reminder", this.reminder);
+            task.put("reminder", this.reminder);
         }
         task.put("done", this.done);
         return task;
     }
-/*
-    public void markAsDoneServer() {
-        String _id = this.getId();
-        if (_id != null) {
-            Map<String, Object> update = new HashMap<>();
-            update.put("done", true);
-            callUpdateTask(_id, update);
-        }
-    }
 
-    public void markAsNotDoneServer() {
-        String _id = this.getId();
-        if (_id != null) {
-            Map<String, Object> update = new HashMap<>();
-            update.put("done", false);
-            callUpdateTask(_id, update);
-        }
-    }
-
-    public void postponeToNextDayServer() {
-        String _id = this.getId();
-        Calendar newDueDate = Calendar.getInstance();
-        newDueDate.setTime(this.getDueDate());
-        newDueDate.add(Calendar.DAY_OF_MONTH, 1);
-        if (_id != null) {
-            Map<String, Object> update = new HashMap<>();
-            update.put("dueDate", newDueDate.getTime());
-            callUpdateTask(_id, update);
-        }
-    }
-
-    public void toggleDoneServer() {
-        String _id = this.getId();
-        if (_id != null) {
-            Map<String, Object> update = new HashMap<>();
-            update.put("done", !this.isDone());
-            callUpdateTask(_id, update);
-        }
-    }
-
-    public void callUpdateTask(String _id, Map<String, Object> update) {
-        MeteorSingleton.getInstance()
-            .call("updateTask", new Object[]{ _id, update }, new ResultListener() {
-                @Override
-                public void onSuccess(String result) {
-                    Log.d("Success", "test");
-                }
-
-                @Override
-                public void onError(String error, String reason, String details) {
-                    Log.d("Error", error);
-                    Log.d("Error", reason);
-                }
-            });
-    }
-*/
     public String toString() {
         StringBuilder result = new StringBuilder();
         String newLine = System.getProperty("line.separator");
