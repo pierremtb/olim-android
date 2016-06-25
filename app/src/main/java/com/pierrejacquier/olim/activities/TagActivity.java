@@ -132,7 +132,7 @@ public class TagActivity extends AppCompatActivity implements ColorChooserDialog
     @Override
     public void finish() {
         app.getCurrentUser().setTags(dbHelper.getTags());
-        setResult(0);
+        setResult(1);
         super.finish();
     }
 

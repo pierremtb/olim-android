@@ -219,31 +219,10 @@ public class TasksFragment
                 // TODO: Set appBar elevation if scrolled
             }
         });
-        final List<Tag> tags = app.getCurrentUser().getTags();
-
-
-        tagsFilteringDialog = new MaterialDialog.Builder(getActivity())
-                .title(R.string.filter_with_tag)
-                .autoDismiss(true)
-                .positiveText(R.string.clear)
-                .positiveColor(getResources().getColor(R.color.colorPrimary))
-                .onPositive(new MaterialDialog.SingleButtonCallback() {
-                    @Override
-                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                        clearCurrentTag();
-                    }
-                })
-                .adapter(new TagsListAdapter(
-                            getContext(),
-                            tags.toArray(new Tag[tags.size()]), this),
-                        new MaterialDialog.ListCallback() {
-                            @Override
-                            public void onSelection(MaterialDialog dialog, View itemView, int which, CharSequence text) {
-                            }
-                        })
-                .build();
+        final List<Tag> tags = Main.updateUserTags();
 
         createNewTaskTagChooserDialog(getContext());
+        createTagsFilteringDialog(getContext());
 
         // Overdue Tasks
         overdueTasksLayoutManager = new CustomLinearLayoutManager(getContext(),  LinearLayoutManager.VERTICAL, false);
@@ -436,6 +415,12 @@ public class TasksFragment
         reRenderTasks();
         Main.updateUserTags();
         createNewTaskTagChooserDialog(getContext());
+        if (resultCode == 1) {
+            tags = Main.updateUserTags();
+            createTagsFilteringDialog(getContext());
+            tagsFilteringDialog.show();
+        }
+
     }
 
     @Override
@@ -461,6 +446,7 @@ public class TasksFragment
         Tag tag = (Tag) v.getTag();
         if (getResources().getResourceName(v.getId()).equals("com.pierrejacquier.olim:id/tagEdit")) {
             launchTagActivity(tag.getId());
+            tagsFilteringDialog.dismiss();
         } else {
             if (tagsFilteringDialog.isShowing()) {
                 tagsFilteringDialog.dismiss();
@@ -561,6 +547,38 @@ public class TasksFragment
             binding.newTaskTag.setBackgroundDrawable(Graphics.createRoundDrawable(newTask.getTag().getColor()));
             binding.newTaskTag.setImageDrawable(id.icon(newTask.getTag().getIconicsName()));
         }
+    }
+
+    private void createTagsFilteringDialog(Context context) {
+        tagsFilteringDialog = new MaterialDialog.Builder(getActivity())
+                .title(R.string.filter_with_tag)
+                .autoDismiss(true)
+                .positiveText(R.string.clear)
+                .positiveColor(getResources().getColor(R.color.colorPrimary))
+                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        clearCurrentTag();
+                    }
+                })
+                .negativeText(R.string.create_tag)
+                .negativeColor(getResources().getColor(R.color.colorPrimaryText))
+                .onNegative(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        launchTagActivity(-1);
+                        tagsFilteringDialog.dismiss();
+                    }
+                })
+                .adapter(new TagsListAdapter(
+                                getContext(),
+                                tags.toArray(new Tag[tags.size()]), this),
+                        new MaterialDialog.ListCallback() {
+                            @Override
+                            public void onSelection(MaterialDialog dialog, View itemView, int which, CharSequence text) {
+                            }
+                        })
+                .build();
     }
 
     private void createNewTaskTagChooserDialog(Context context) {
