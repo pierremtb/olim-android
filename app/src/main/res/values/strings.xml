@@ -227,4 +227,14 @@
     <string name="pref_title_tasks_reminder_notifications">Tasks reminders notifications</string>
     <string name="navigation_drawer_about">About</string>
     <string name="app_description">Easily manage your tasks</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="welcome">Welcome in Olim</string>
+    <string name="google_connect_description">Just click the Sign in button to get started, you\'ll will be prompted for the Google account to use for data sync.</string>
+    <string name="read_contacts">Read contacts</string>
+    <string name="read_contacts_descriptions">We need to have access to your contacs to fetch and display your and only your profile informations.</string>
+    <string name="connected">Connected</string>
+    <string name="all_set">All set</string>
+    <string name="all_set_description">You can now start using Olim.</string>
 </resources>

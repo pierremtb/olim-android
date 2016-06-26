@@ -15,6 +15,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
@@ -60,7 +61,7 @@ public class MainActivity
         implements NewerDatabaseCallback,
             TasksFragment.OnFragmentInteractionListener,
             TagsFragment.OnFragmentInteractionListener,
-            DriveSyncController.GoogleApiClientCallbacks {
+        DriveSyncController.GoogleApiClientCallbacks {
 
     private Olim app;
     private static final int MY_PERMISSIONS_REQUEST_GET_ACCOUNTS = 1;
@@ -71,17 +72,42 @@ public class MainActivity
     private DriveSyncController syncController;
     private Toolbar toolbar;
     private Drawer drawer = null;
+    private boolean isFirstStart = false;
 
     private final static int DRAWER_TASKS = 1;
     private final static int DRAWER_TAGS = 2;
     private final static int DRAWER_DIVIDER = 3;
     private final static int DRAWER_SETTINGS = 4;
     private final static int DRAWER_ABOUT = 5;
+    private final static int DRAWER_SIGNOUT = 6;
+
+    private final static int INTRO_ACTIVITY = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = (Olim) getApplicationContext();
+        final Context context = this;
+        app.setDatabase(context);
+
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                SharedPreferences getPrefs = PreferenceManager
+                        .getDefaultSharedPreferences(getBaseContext());
+                isFirstStart = getPrefs.getBoolean("firstStart", true);
+
+                if (isFirstStart) {
+                    launchIntro();
+                    SharedPreferences.Editor e = getPrefs.edit();
+                    e.putBoolean("firstStart", false);
+                    e.apply();
+                } else {
+                    app.setGoogleSync(context, true);
+                }
+            }
+        });
+        t.start();
 
         String fullName = "User Name";
         String email = "user@name.do";
@@ -99,8 +125,6 @@ public class MainActivity
             actionBar.setTitle("Tasks");
             // TODO: set an elevation when scrolling
         }
-        requestPermissions();
-        showTasksFragment();
     }
 
     @Override
@@ -193,6 +217,16 @@ public class MainActivity
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case INTRO_ACTIVITY:
+                setupMainActivity();
+                break;
+        }
+    }
+
+    @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[],
                                            @NonNull int[] grantResults) {
@@ -212,7 +246,12 @@ public class MainActivity
      * Navigation handling methods
      */
 
-    public void showTasksFragment() {
+    private void launchIntro() {
+        Intent i = new Intent(MainActivity.this, IntroActivity.class);
+        startActivityForResult(i, INTRO_ACTIVITY);
+    }
+
+    private void showTasksFragment() {
         Fragment TasksFG = new TasksFragment();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.mainFrame, TasksFG, "TasksFragment");
@@ -248,6 +287,11 @@ public class MainActivity
         ft.commit();
     }
 
+    private void signOut() {
+        app.wipeData();
+        launchIntro();
+    }
+
     private TasksFragment getTasksFragment() {
         return (TasksFragment) getSupportFragmentManager().findFragmentByTag("TasksFragment");
     }
@@ -270,6 +314,11 @@ public class MainActivity
     /**
      * Display handling methods
      */
+
+    private void setupMainActivity() {
+        buildDrawer();
+        showTasksFragment();
+    }
 
     private void requestPermissions() {
         if (ContextCompat.checkSelfPermission(this,
@@ -349,8 +398,7 @@ public class MainActivity
         syncController.isDriveDbNewer();
     }
 
-    @Override
-    public void onGoogleConnected(Olim app) {
+    private void buildDrawer() {
         if (app == null) {
             return;
         }
@@ -395,6 +443,11 @@ public class MainActivity
                                 .withIdentifier(DRAWER_ABOUT)
                                 .withName(R.string.navigation_drawer_about)
                                 .withIcon(GoogleMaterial.Icon.gmd_info_outline)
+                                .withSelectable(false),
+                        new SecondaryDrawerItem()
+                                .withIdentifier(DRAWER_SIGNOUT)
+                                .withName(R.string.navigation_drawer_signout)
+                                .withIcon(GoogleMaterial.Icon.gmd_exit_to_app)
                                 .withSelectable(false)
                 )
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
@@ -413,6 +466,9 @@ public class MainActivity
                             case DRAWER_ABOUT:
                                 launchAbout();
                                 break;
+                            case DRAWER_SIGNOUT:
+                                signOut();
+                                break;
                             default: break;
                         }
                         return false;
@@ -421,5 +477,17 @@ public class MainActivity
                 .build();
         ImageView coverView = headerResult.getHeaderBackgroundView();
         Glide.with(this).load(app.getCurrentUser().getCoverUrl()).into(coverView);
+    }
+
+    @Override
+    public void onGoogleConnected(Olim app) {
+        if (!isFirstStart) {
+            setupMainActivity();
+        }
+    }
+
+    @Override
+    public void onGoogleDisconnected(Olim app) {
+        getTasksFragment().showSnack("Disconnected");
     }
 }

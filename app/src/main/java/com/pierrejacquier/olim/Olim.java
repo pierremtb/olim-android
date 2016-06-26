@@ -7,14 +7,39 @@ import android.net.Uri;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.plus.Plus;
 import com.mikepenz.iconics.IconicsDrawable;
 import com.mikepenz.materialdrawer.util.AbstractDrawerImageLoader;
 import com.mikepenz.materialdrawer.util.DrawerImageLoader;
 import com.mikepenz.materialdrawer.util.DrawerUIUtils;
 import com.pierrejacquier.olim.data.User;
+import com.pierrejacquier.olim.helpers.DbHelper;
+import com.pierrejacquier.olim.helpers.DriveSyncController;
+import com.pierrejacquier.olim.helpers.NewerDatabaseCallback;
+import com.google.android.gms.auth.api.Auth;
 
-public class Olim extends Application {
+public class Olim extends Application implements NewerDatabaseCallback {
     private User currentUser;
+    private DriveSyncController googleSync;
+    private DbHelper database;
+
+    public DriveSyncController getGoogleSync() {
+        return googleSync;
+    }
+
+    public void setGoogleSync(Context context, boolean googleAuthorized) {
+        this.googleSync = DriveSyncController
+                .get(context, this.database, this, this, googleAuthorized)
+                .setDebug(true);
+    }
+
+    public DbHelper getDatabase() {
+        return database;
+    }
+
+    public void setDatabase(Context context) {
+        this.database = new DbHelper(context);
+    }
 
     public User getCurrentUser() {
         return currentUser;
@@ -22,6 +47,14 @@ public class Olim extends Application {
 
     public void setCurrentUser(User currentUser) {
         this.currentUser = currentUser;
+    }
+
+    public void wipeData() {
+        setCurrentUser(null);
+        Plus.AccountApi.clearDefaultAccount(getGoogleSync().getGoogleApiClient());
+        getGoogleSync().getGoogleApiClient().disconnect();
+        this.googleSync = null;
+        this.database.clearDatabase();
     }
 
     @Override
@@ -57,5 +90,15 @@ public class Olim extends Application {
                 return super.placeholder(ctx, tag);
             }
         });
+    }
+
+    @Override
+    public void driveNewer() {
+
+    }
+
+    @Override
+    public void localNewer() {
+
     }
 }

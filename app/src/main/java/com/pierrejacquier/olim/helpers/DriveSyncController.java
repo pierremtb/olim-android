@@ -103,11 +103,17 @@ public class DriveSyncController implements FileResultsReadyCallback {
 
     public interface GoogleApiClientCallbacks {
         void onGoogleConnected(Olim app);
+        void onGoogleDisconnected(Olim app);
     }
 
     private void callbackGoogleConnected(Context context) {
         GoogleApiClientCallbacks gacc = (GoogleApiClientCallbacks) context;
         gacc.onGoogleConnected(app);
+    }
+
+    private void callbackGoogleDisconnected(Context context) {
+        GoogleApiClientCallbacks gacc = (GoogleApiClientCallbacks) context;
+        gacc.onGoogleDisconnected(app);
     }
 
     private void fetchGoogle() {
@@ -164,6 +170,7 @@ public class DriveSyncController implements FileResultsReadyCallback {
                             // Show the localized error dialog
                             GooglePlayServicesUtil.getErrorDialog(connectionResult.getErrorCode(),
                                     (Activity) context, 0).show();
+                            callbackGoogleDisconnected(context);
                             return;
                         }
 
@@ -171,6 +178,7 @@ public class DriveSyncController implements FileResultsReadyCallback {
                             connectionResult.startResolutionForResult((Activity) context, 0);
                         } catch (IntentSender.SendIntentException e) {
                             Log.e("GoogleApiClient", "Exception while starting resolution activity");
+                            callbackGoogleDisconnected(context);
                         }
                     }
                 },

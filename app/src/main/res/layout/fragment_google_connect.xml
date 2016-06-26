@@ -1,0 +1,76 @@
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimary"
+        tools:context="com.pierrejacquier.olim.fragments.GoogleConnectFragment"
+        android:id="@+id/constraintLayout">
+
+        <com.devspark.robototextview.widget.RobotoTextView
+            android:layout_width="wrap_content"
+            android:text="@string/welcome"
+            android:textColor="@color/colorPrimaryText"
+            android:textSize="35sp"
+            app:fontFamily="roboto"
+            app:textWeight="light"
+            android:layout_height="wrap_content"
+            android:id="@+id/robotoTextView"
+            app:layout_constraintLeft_toLeftOf="@+id/constraintLayout"
+            app:layout_constraintTop_toTopOf="@+id/constraintLayout"
+            android:layout_marginTop="80dp"
+            app:layout_constraintRight_toRightOf="@+id/constraintLayout" />
+
+        <com.devspark.robototextview.widget.RobotoTextView
+            android:layout_width="353dp"
+            android:text="@string/google_connect_description"
+            android:textColor="@color/colorPrimaryText"
+            android:textSize="18sp"
+            android:layout_height="65dp"
+            app:layout_constraintLeft_toLeftOf="@+id/robotoTextView"
+            app:layout_constraintTop_toBottomOf="@+id/robotoTextView"
+            android:layout_marginTop="24dp"
+            app:layout_constraintRight_toRightOf="@+id/robotoTextView" />
+
+        <LinearLayout
+            android:id="@+id/googleConnected"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:background="@drawable/chip_background"
+            android:elevation="2dp"
+            android:visibility="gone"
+            app:layout_constraintLeft_toLeftOf="@+id/constraintLayout"
+            app:layout_constraintRight_toRightOf="@+id/constraintLayout"
+            app:layout_constraintBottom_toBottomOf="@+id/constraintLayout"
+            android:layout_marginBottom="104dp">
+            <TextView
+                android:id="@+id/currentTagChipLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:maxLines="1"
+                android:text="@string/connected"
+                android:textColor="@color/colorSecondaryText"
+                android:textSize="13sp"
+                tools:layout_editor_absoluteX="0dp"
+                tools:layout_editor_absoluteY="8dp" />
+
+        </LinearLayout>
+
+
+        <com.google.android.gms.common.SignInButton
+            android:id="@+id/sign_in_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintLeft_toLeftOf="@+id/constraintLayout"
+            app:layout_constraintRight_toRightOf="@+id/constraintLayout"
+            app:layout_constraintBottom_toBottomOf="@+id/constraintLayout"
+            android:layout_marginBottom="96dp" />
+
+    </android.support.constraint.ConstraintLayout>
+
+</layout>

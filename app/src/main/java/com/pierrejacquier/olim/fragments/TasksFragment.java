@@ -759,7 +759,7 @@ public class TasksFragment
         tagsFilteringDialog.show();
     }
 
-    private void showSnack(String text) {
+    public void showSnack(String text) {
         Snackbar.make(binding.tasksCoordinatorLayout, text, Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show();
     }
