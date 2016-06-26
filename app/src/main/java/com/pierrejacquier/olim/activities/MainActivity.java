@@ -64,7 +64,6 @@ public class MainActivity
         DriveSyncController.GoogleApiClientCallbacks {
 
     private Olim app;
-    private static final int MY_PERMISSIONS_REQUEST_GET_ACCOUNTS = 1;
     private ActionBar actionBar;
     private String currentFragmentName = null;
     private Menu actionsMenu;
@@ -227,23 +226,6 @@ public class MainActivity
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[],
-                                           @NonNull int[] grantResults) {
-        Log.d("auie", "auinearusienuires");
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_GET_ACCOUNTS: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    startSync(true);
-                } else {
-                    startSync(false);
-                }
-            }
-        }
-    }
-
     /**
      * Navigation handling methods
      */
@@ -263,15 +245,7 @@ public class MainActivity
     }
 
     private void showTagsFragment() {
-//        if (actionsMenu != null) {
-//            MenuItem item = actionsMenu.getItem(0);
-//            item.setIcon(getResources().getDrawable(R.drawable.ic_add));
-//            if (item != null) {
-//                // TODO: make Filter and Search actions disappear on TagsFragment
-//                item.setVisible(false);
-//                ActivityCompat.invalidateOptionsMenu(this);
-//            }
-//        }
+//      TODO: make Filter and Search actions disappear on TagsFragment
         Fragment TagsFG = new TagsFragment();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.mainFrame, TagsFG);
@@ -320,28 +294,6 @@ public class MainActivity
     private void setupMainActivity() {
         buildDrawer();
         showTasksFragment();
-    }
-
-    private void requestPermissions() {
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.GET_ACCOUNTS)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.READ_CONTACTS)) {
-
-                // TODO: Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.GET_ACCOUNTS},
-                        MY_PERMISSIONS_REQUEST_GET_ACCOUNTS);
-            }
-        } else {
-            startSync(true);
-        }
     }
 
     private void toast(String message) {
@@ -397,7 +349,7 @@ public class MainActivity
     }
 
     public void refreshData() {
-        syncController.isDriveDbNewer();
+        app.getGoogleSync().isDriveDbNewer();
     }
 
     private void buildDrawer() {

@@ -375,7 +375,17 @@ public class DriveSyncController implements FileResultsReadyCallback {
      */
     @Override
     public boolean openModeWriteable() {
-        switch (requestQueue.peek()) {
+        // TODO: fix this method when on isDriveNewer() call
+        if (requestQueue == null) {
+            return false;
+        }
+        Integer flag;
+        try {
+            flag = requestQueue.peek();
+        } catch (Exception e) {
+            return false;
+        }
+        switch (flag) {
             case PUT:
                 return true;
 

@@ -14,11 +14,13 @@ import com.pierrejacquier.olim.fragments.AllSetFragment;
 import com.pierrejacquier.olim.fragments.GoogleConnectFragment;
 import com.pierrejacquier.olim.fragments.PermissionsFragment;
 import com.pierrejacquier.olim.helpers.DriveSyncController;
+import com.pierrejacquier.olim.helpers.NewerDatabaseCallback;
 
 public class IntroActivity
         extends AppIntro
         implements DriveSyncController.GoogleApiClientCallbacks,
-                    GoogleConnectFragment.OnFragmentInteractionListener {
+                    GoogleConnectFragment.OnFragmentInteractionListener,
+                    NewerDatabaseCallback {
 
     private Olim app;
     private GoogleConnectFragment googleConnectFragment;
@@ -33,12 +35,15 @@ public class IntroActivity
         if (android.os.Build.VERSION.SDK_INT >= 23) {
             addSlide(PermissionsFragment.newInstance());
             askForPermissions(new String[]{Manifest.permission.READ_CONTACTS}, 1);
+            showDoneButton(true);
+        } else {
+            app.setReadContactsAllowed(true);
+            showDoneButton(false);
         }
 
         addSlide(googleConnectFragment);
         addSlide(AllSetFragment.newInstance());
         showSkipButton(false);
-        showDoneButton(true);
 
         pager.setNextPagingEnabled(true);
     }
@@ -91,5 +96,15 @@ public class IntroActivity
         pager.setNextPagingEnabled(false);
         pager.setCurrentItem(0);
         showDoneButton(false);
+    }
+
+    @Override
+    public void driveNewer() {
+
+    }
+
+    @Override
+    public void localNewer() {
+
     }
 }

@@ -34,8 +34,7 @@ public class SwipeableTaskAdapter
     private static final String TAG = "MySwipeableItemAdapter";
 
     // TODO: create a latency compensation system (avoid updating the whole RVs)
-    private interface Swipeable extends SwipeableItemConstants {
-    }
+    private interface Swipeable extends SwipeableItemConstants {}
 
     private List<Task> tasks;
     private EventListener mEventListener;
@@ -261,8 +260,8 @@ public class SwipeableTaskAdapter
         protected void onPerformAction() {
             super.onPerformAction();
 
-            mAdapter.notifyItemChanged(mPosition);
-            mSetPinned = true;
+//            mAdapter.notifyItemChanged(mPosition);
+//            mSetPinned = true;
         }
 
         @Override
@@ -277,7 +276,6 @@ public class SwipeableTaskAdapter
         @Override
         protected void onCleanUp() {
             super.onCleanUp();
-            // clear the referencess
         }
     }
 
@@ -294,8 +292,8 @@ public class SwipeableTaskAdapter
         protected void onPerformAction() {
             super.onPerformAction();
 
-            //mAdapter.tasks.remove(mPosition);
-            mAdapter.notifyItemRemoved(mPosition);
+//            mAdapter.tasks.remove(mPosition);
+//            mAdapter.notifyItemRemoved(mPosition);
         }
 
         @Override
@@ -310,7 +308,6 @@ public class SwipeableTaskAdapter
         @Override
         protected void onCleanUp() {
             super.onCleanUp();
-            // clear the references
             mAdapter = null;
         }
     }
@@ -328,15 +325,14 @@ public class SwipeableTaskAdapter
         protected void onPerformAction() {
             super.onPerformAction();
 
-            Task task = mAdapter.tasks.get(mPosition);
-            //task.setPinned(false);
-            mAdapter.notifyItemChanged(mPosition);
+//            Task task = mAdapter.tasks.get(mPosition);
+//            task.setPinned(false);
+//            mAdapter.notifyItemChanged(mPosition);
         }
 
         @Override
         protected void onCleanUp() {
             super.onCleanUp();
-            // clear the references
             mAdapter = null;
         }
     }
