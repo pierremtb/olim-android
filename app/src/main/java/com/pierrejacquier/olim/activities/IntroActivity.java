@@ -1,9 +1,12 @@
 package com.pierrejacquier.olim.activities;
 
 import android.Manifest;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 
 import com.github.paolorotolo.appintro.AppIntro;
 import com.pierrejacquier.olim.Olim;
@@ -19,6 +22,7 @@ public class IntroActivity
 
     private Olim app;
     private GoogleConnectFragment googleConnectFragment;
+    private static final int MY_PERMISSIONS_REQUEST_GET_ACCOUNTS = 1;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -26,14 +30,17 @@ public class IntroActivity
         app = (Olim) getApplicationContext();
         googleConnectFragment = GoogleConnectFragment.newInstance();
 
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
+            addSlide(PermissionsFragment.newInstance());
+            askForPermissions(new String[]{Manifest.permission.READ_CONTACTS}, 1);
+        }
+
         addSlide(googleConnectFragment);
-        addSlide(PermissionsFragment.newInstance());
         addSlide(AllSetFragment.newInstance());
         showSkipButton(false);
-        showDoneButton(false);
-        askForPermissions(new String[]{Manifest.permission.READ_CONTACTS}, 2);
+        showDoneButton(true);
 
-        pager.setNextPagingEnabled(false);
+        pager.setNextPagingEnabled(true);
     }
 
     @Override
@@ -44,7 +51,7 @@ public class IntroActivity
 
     @Override
     public void onGoogleConnected(Olim app) {
-        moveToPermissions();
+        moveToAllSet();
     }
 
     @Override
@@ -56,10 +63,27 @@ public class IntroActivity
     public void onFragmentInteraction(Uri uri) {
     }
 
-    private void moveToPermissions() {
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        Log.d("auie", "auinearusienuires");
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_GET_ACCOUNTS: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    app.setReadContactsAllowed(true);
+                } else {
+                    app.setReadContactsAllowed(false);
+                }
+            }
+        }
+    }
+
+    private void moveToAllSet() {
         googleConnectFragment.setGoogleConnected();
         pager.setNextPagingEnabled(true);
-        pager.setCurrentItem(1);
+        pager.setCurrentItem(2);
         showDoneButton(true);
     }
 

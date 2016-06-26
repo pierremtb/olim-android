@@ -96,6 +96,7 @@ public class MainActivity
                 SharedPreferences getPrefs = PreferenceManager
                         .getDefaultSharedPreferences(getBaseContext());
                 isFirstStart = getPrefs.getBoolean("firstStart", true);
+                isFirstStart = true;
 
                 if (isFirstStart) {
                     launchIntro();
@@ -230,6 +231,7 @@ public class MainActivity
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[],
                                            @NonNull int[] grantResults) {
+        Log.d("auie", "auinearusienuires");
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_GET_ACCOUNTS: {
                 if (grantResults.length > 0
@@ -403,22 +405,27 @@ public class MainActivity
             return;
         }
 
-        AccountHeader headerResult = new AccountHeaderBuilder()
-                .withActivity(this)
-                .withHeaderBackground(R.drawable.background)
-                .addProfiles(
-                        new ProfileDrawerItem()
-                                .withName(app.getCurrentUser().getFullName())
-                                .withEmail(app.getCurrentUser().getEmail())
-                                .withIcon(app.getCurrentUser().getPictureUrl())
-                )
-                .withOnAccountHeaderListener(new AccountHeader.OnAccountHeaderListener() {
-                    @Override
-                    public boolean onProfileChanged(View view, IProfile profile, boolean current) {
-                        return false;
-                    }
-                })
-                .build();
+        AccountHeader headerResult = null;
+
+        if (app.isReadContactsAllowed()) {
+            headerResult = new AccountHeaderBuilder()
+                    .withActivity(this)
+                    .withHeaderBackground(R.drawable.background)
+                    .addProfiles(
+                            new ProfileDrawerItem()
+                                    .withName(app.getCurrentUser().getFullName())
+                                    .withEmail(app.getCurrentUser().getEmail())
+                                    .withIcon(app.getCurrentUser().getPictureUrl())
+                    )
+                    .withOnAccountHeaderListener(new AccountHeader.OnAccountHeaderListener() {
+                        @Override
+                        public boolean onProfileChanged(View view, IProfile profile, boolean current) {
+                            return false;
+                        }
+                    })
+                    .build();
+        }
+
         drawer = new DrawerBuilder()
                 .withActivity(this)
                 .withToolbar(toolbar)
@@ -475,8 +482,10 @@ public class MainActivity
                     }
                 })
                 .build();
-        ImageView coverView = headerResult.getHeaderBackgroundView();
-        Glide.with(this).load(app.getCurrentUser().getCoverUrl()).into(coverView);
+        if (app.isReadContactsAllowed()) {
+            ImageView coverView = headerResult.getHeaderBackgroundView();
+            Glide.with(this).load(app.getCurrentUser().getCoverUrl()).into(coverView);
+        }
     }
 
     @Override

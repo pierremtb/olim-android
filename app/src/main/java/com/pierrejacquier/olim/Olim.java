@@ -22,6 +22,7 @@ public class Olim extends Application implements NewerDatabaseCallback {
     private User currentUser;
     private DriveSyncController googleSync;
     private DbHelper database;
+    private boolean readContactsAllowed;
 
     public DriveSyncController getGoogleSync() {
         return googleSync;
@@ -31,6 +32,14 @@ public class Olim extends Application implements NewerDatabaseCallback {
         this.googleSync = DriveSyncController
                 .get(context, this.database, this, this, googleAuthorized)
                 .setDebug(true);
+    }
+
+    public boolean isReadContactsAllowed() {
+        return readContactsAllowed;
+    }
+
+    public void setReadContactsAllowed(boolean readContactsAllowed) {
+        this.readContactsAllowed = readContactsAllowed;
     }
 
     public DbHelper getDatabase() {

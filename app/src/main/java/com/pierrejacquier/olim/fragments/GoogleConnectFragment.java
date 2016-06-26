@@ -46,7 +46,7 @@ public class GoogleConnectFragment extends Fragment {
         binding.signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                app.setGoogleSync(getContext(), true);
+                app.setGoogleSync(getContext(), app.isReadContactsAllowed());
             }
         });
     }
