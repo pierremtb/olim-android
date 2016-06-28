@@ -502,7 +502,7 @@ public class TasksFragment
             return;
         }
 
-        overdueTasks.addAll(user.getOverdueTasks(tag, excludeDone));
+        overdueTasks.addAll(user.getOverdueTasks(tag, true));
         todayTasks.addAll(user.getTodayTasks(tag, excludeDone));
         tomorrowTasks.addAll(user.getTomorrowTasks(tag, excludeDone));
         inTheNextSevenDaysTasks.addAll(user.getInTheNextSevenDaysTasks(tag, excludeDone));

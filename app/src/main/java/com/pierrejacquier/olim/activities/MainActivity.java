@@ -123,7 +123,6 @@ public class MainActivity
         actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setTitle("Tasks");
-            // TODO: set an elevation when scrolling
         }
     }
 
