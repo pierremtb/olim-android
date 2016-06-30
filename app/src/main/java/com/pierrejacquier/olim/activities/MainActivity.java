@@ -4,18 +4,21 @@ import android.Manifest;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
@@ -27,6 +30,13 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.github.athingunique.ddbs.DriveSyncController;
+import com.github.athingunique.ddbs.NewerDatabaseCallback;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.drive.Drive;
+import com.google.android.gms.plus.Plus;
+import com.google.android.gms.plus.model.people.Person;
 import com.mikepenz.aboutlibraries.Libs;
 import com.mikepenz.aboutlibraries.LibsBuilder;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
@@ -46,12 +56,10 @@ import com.pierrejacquier.olim.R;
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
 import com.pierrejacquier.olim.data.User;
+import com.pierrejacquier.olim.databinding.ActivityMainBinding;
 import com.pierrejacquier.olim.fragments.LoadingFragment;
 import com.pierrejacquier.olim.fragments.TagsFragment;
 import com.pierrejacquier.olim.fragments.TasksFragment;
-import com.pierrejacquier.olim.helpers.DbHelper;
-import com.pierrejacquier.olim.helpers.DriveSyncController;
-import com.pierrejacquier.olim.helpers.NewerDatabaseCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,17 +69,17 @@ public class MainActivity
         implements NewerDatabaseCallback,
             TasksFragment.OnFragmentInteractionListener,
             TagsFragment.OnFragmentInteractionListener,
-        DriveSyncController.GoogleApiClientCallbacks {
+            GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private Olim app;
     private ActionBar actionBar;
     private String currentFragmentName = null;
     private Menu actionsMenu;
-    private DbHelper dbHelper;
     private DriveSyncController syncController;
     private Toolbar toolbar;
     private Drawer drawer = null;
-    private boolean isFirstStart = false;
+    private Context context;
+    private ActivityMainBinding binding;
 
     private final static int DRAWER_TASKS = 1;
     private final static int DRAWER_TAGS = 2;
@@ -81,49 +89,41 @@ public class MainActivity
     private final static int DRAWER_SIGNOUT = 6;
 
     private final static int INTRO_ACTIVITY = 2;
+    private final static int SIGNIN_RESOLUTION = 3;
+
+    private final static int PERMISSIONS_REQUEST_GET_ACCOUNTS = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = (Olim) getApplicationContext();
-        final Context context = this;
+        context = this;
         app.setDatabase(context);
 
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                SharedPreferences getPrefs = PreferenceManager
-                        .getDefaultSharedPreferences(getBaseContext());
-                isFirstStart = getPrefs.getBoolean("firstStart", true);
-                isFirstStart = true;
+        app.setGoogleApiClient(new GoogleApiClient.Builder(this)
+                .addApi(Drive.API)
+                .addApi(Plus.API)
+                .addScope(Plus.SCOPE_PLUS_PROFILE)
+                .addScope(Drive.SCOPE_APPFOLDER)
+                .addScope(Drive.SCOPE_FILE)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build()
+        );
 
-                if (isFirstStart) {
-                    launchIntro();
-                    SharedPreferences.Editor e = getPrefs.edit();
-                    e.putBoolean("firstStart", false);
-                    e.apply();
-                } else {
-                    app.setGoogleSync(context, true);
-                }
-            }
-        });
-        t.start();
-
-        String fullName = "User Name";
-        String email = "user@name.do";
-        dbHelper = new DbHelper(this);
-        List<Task> tasks = dbHelper.getTasks();
-        List<Tag> tags = dbHelper.getTags();
-        app.setCurrentUser(new User(fullName, email, tasks, tags));
+        List<Task> tasks = app.getDatabase().getTasks();
+        List<Tag> tags = app.getDatabase().getTags();
+        app.setCurrentUser(new User("User Name", "user@name.do", tasks, tags));
 
         // Do some layout stuff
-        setContentView(R.layout.activity_main);
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        toolbar = binding.toolbar;
         setSupportActionBar(toolbar);
         actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setTitle("Tasks");
         }
+        showLoadingFragment();
     }
 
     @Override
@@ -154,7 +154,7 @@ public class MainActivity
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                List<Task> tasks = dbHelper.getTasks(getTasksFragment().getCurrentTag());
+                List<Task> tasks = app.getDatabase().getTasks(getTasksFragment().getCurrentTag());
                 List<Task> filteredTasks = new ArrayList<>();
                 if (newText.equals("")) {
                     filteredTasks = tasks;
@@ -197,21 +197,26 @@ public class MainActivity
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+    }
+
+    @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(IconicsContextWrapper.wrap(newBase));
     }
 
     @Override
     public void driveNewer() {
-        syncController.pullDbFromDrive();
-        toast("Cloud newer");
+        Log.d("auie","Cloud newer");
+        app.getGoogleSync().pullDbFromDrive();
         getTasksFragment().endRefreshing();
     }
 
     @Override
     public void localNewer() {
-        syncController.putDbInDrive();
+        Log.d("auie","Cloud newer");
         toast("Local newer");
+        app.getGoogleSync().putDbInDrive();
         getTasksFragment().endRefreshing();
     }
 
@@ -220,19 +225,47 @@ public class MainActivity
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
             case INTRO_ACTIVITY:
-                setupMainActivity();
+            case SIGNIN_RESOLUTION:
+                Log.d("auie", "resooo");
+                app.setGoogleApiClient(new GoogleApiClient.Builder(this)
+                        .addApi(Drive.API)
+                        .addApi(Plus.API)
+                        .addScope(Plus.SCOPE_PLUS_PROFILE)
+                        .addScope(Drive.SCOPE_APPFOLDER)
+                        .addScope(Drive.SCOPE_FILE)
+                        .addConnectionCallbacks(this)
+                        .addOnConnectionFailedListener(this)
+                        .build()
+                );
+
+                app.getGoogleApiClient().connect();
                 break;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_GET_ACCOUNTS: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    app.setReadContactsAllowed(true);
+                }
+                else {
+                    app.setReadContactsAllowed(false);
+                }
+
+                buildDrawer();
+                showTasksFragment();
+            }
         }
     }
 
     /**
      * Navigation handling methods
      */
-
-    private void launchIntro() {
-        Intent i = new Intent(MainActivity.this, IntroActivity.class);
-        startActivityForResult(i, INTRO_ACTIVITY);
-    }
 
     private void showTasksFragment() {
         Fragment TasksFG = new TasksFragment();
@@ -264,7 +297,6 @@ public class MainActivity
 
     private void signOut() {
         app.wipeData();
-        launchIntro();
     }
 
     private TasksFragment getTasksFragment() {
@@ -290,9 +322,28 @@ public class MainActivity
      * Display handling methods
      */
 
+    private void showSnack(String text) {
+        Snackbar.make(binding.mainLayout, text, Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show();
+    }
+
+    private void requestPermissions() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.GET_ACCOUNTS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+                showSnack("Reading contacts enables a nice drawer header with your info");
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.GET_ACCOUNTS},
+                        PERMISSIONS_REQUEST_GET_ACCOUNTS);
+        } else {
+            buildDrawer();
+            showTasksFragment();
+        }
+    }
+
     private void setupMainActivity() {
-        buildDrawer();
-        showTasksFragment();
+        requestPermissions();
     }
 
     private void toast(String message) {
@@ -303,52 +354,55 @@ public class MainActivity
      * Data handling methods
      */
 
-    private void startSync(boolean googleAuthorized) {
-        syncController = DriveSyncController.get(this, dbHelper, this, app, googleAuthorized).setDebug(true);
+    private void fetchGoogle() {
+        Plus.PeopleApi.loadVisible(app.getGoogleApiClient(), null);
+        Person person = Plus.PeopleApi.getCurrentPerson(app.getGoogleApiClient());
+        if (person != null) {
+            String fullName = person.getDisplayName();
+            String email = Plus.AccountApi.getAccountName(app.getGoogleApiClient());
+            app.setCurrentUser(new User(fullName, email, null, null));
+            app.getCurrentUser().setCoverUrl(person.getCover().getCoverPhoto().getUrl());
+            app.getCurrentUser().setPictureUrl(person.getImage().getUrl());
+        }
     }
 
     public void insertTask(Task task) {
-        dbHelper.insertTask(task);
+        app.getDatabase().insertTask(task);
         showTasksFragment();
     }
 
     public void updateTask(Task task) {
-        dbHelper.updateTask(task);
+        app.getDatabase().updateTask(task);
         showTasksFragment();
     }
 
-    public void syncDb() {
-        syncController.isDriveDbNewer();
-        updateUserTasks();
-        updateUserTags();
-    }
-
     public Tag getTag(long id) {
-        return dbHelper.getTag(id);
+        return app.getDatabase().getTag(id);
     }
 
     public List<Task> getTasks(Tag tag) {
-        return dbHelper.getTasks(tag);
+        return app.getDatabase().getTasks(tag);
     }
 
     public List<Tag> getTags() {
-        return dbHelper.getTags();
+        return app.getDatabase().getTags();
     }
 
     public List<Task> updateUserTasks() {
-        List<Task> tasks = dbHelper.getTasks();
-        app.getCurrentUser().setTasks(dbHelper.getTasks());
+        List<Task> tasks = app.getDatabase().getTasks();
+        app.getCurrentUser().setTasks(app.getDatabase().getTasks());
         return tasks;
     }
 
     public List<Tag> updateUserTags() {
-        List<Tag> tags = dbHelper.getTags();
-        app.getCurrentUser().setTags(dbHelper.getTags());
+        List<Tag> tags = app.getDatabase().getTags();
+        app.getCurrentUser().setTags(app.getDatabase().getTags());
         return tags;
     }
 
     public void refreshData() {
         app.getGoogleSync().isDriveDbNewer();
+        getTasksFragment().endRefreshing();
     }
 
     private void buildDrawer() {
@@ -359,6 +413,7 @@ public class MainActivity
         AccountHeader headerResult = null;
 
         if (app.isReadContactsAllowed()) {
+            fetchGoogle();
             headerResult = new AccountHeaderBuilder()
                     .withActivity(this)
                     .withHeaderBackground(R.drawable.background)
@@ -374,6 +429,11 @@ public class MainActivity
                             return false;
                         }
                     })
+                    .build();
+        } else {
+            headerResult = new AccountHeaderBuilder()
+                    .withActivity(this)
+                    .withHeaderBackground(R.drawable.background)
                     .build();
         }
 
@@ -440,14 +500,24 @@ public class MainActivity
     }
 
     @Override
-    public void onGoogleConnected(Olim app) {
-        if (!isFirstStart) {
-            setupMainActivity();
-        }
+    public void onConnected(@Nullable Bundle bundle) {
+        syncController = DriveSyncController.get(context, app.getDatabase(), this);
+        app.setGoogleSync(syncController);
+        setupMainActivity();
     }
 
     @Override
-    public void onGoogleDisconnected(Olim app) {
-        getTasksFragment().showSnack("Disconnected");
+    public void onConnectionSuspended(int i) {}
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        if (connectionResult.hasResolution()) {
+            try {
+                connectionResult.startResolutionForResult(this, SIGNIN_RESOLUTION);
+                app.getGoogleApiClient().connect();
+            } catch (IntentSender.SendIntentException e) {
+                app.getGoogleApiClient().connect();
+            }
+        }
     }
 }

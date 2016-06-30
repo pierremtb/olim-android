@@ -1,17 +1,11 @@
 package com.pierrejacquier.olim.helpers;
 
-/*
- * Created by evan on 4/28/15.
- */
-
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
-import android.preference.PreferenceManager;
 
 import com.pierrejacquier.olim.data.Tag;
 import com.pierrejacquier.olim.data.Task;
@@ -19,14 +13,12 @@ import com.pierrejacquier.olim.data.Task;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * A simple SQLiteOpenHelper subclass for demonstration purposes
- */
+
 public class DbHelper extends SQLiteOpenHelper {
 
-    private static final int DB_VER = 9;
+    private static final int DB_VER = 11;
 
-    private static final String DB_NAME = "userData";
+    private static final String DB_NAME = "olim";
     
     private static final String TASKS_TABLE = "tasks";
     private static final String TASKS_ID_COL = "id";

@@ -2,6 +2,8 @@ package com.pierrejacquier.olim.helpers;
 
 import android.app.Activity;
 import android.content.Context;
+import android.databinding.tool.reflection.SdkUtil;
+import android.os.Build;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
@@ -198,5 +200,9 @@ public final class Tools {
     public static String toProperCase(String s) {
         return s.substring(0, 1).toUpperCase() +
                 s.substring(1).toLowerCase();
+    }
+
+    public static boolean arePermissionsRequired() {
+        return Build.VERSION.SDK_INT >= 23;
     }
 }

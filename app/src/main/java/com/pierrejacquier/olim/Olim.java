@@ -7,6 +7,9 @@ import android.net.Uri;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.github.athingunique.ddbs.DriveSyncController;
+import com.github.athingunique.ddbs.NewerDatabaseCallback;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.plus.Plus;
 import com.mikepenz.iconics.IconicsDrawable;
 import com.mikepenz.materialdrawer.util.AbstractDrawerImageLoader;
@@ -14,24 +17,33 @@ import com.mikepenz.materialdrawer.util.DrawerImageLoader;
 import com.mikepenz.materialdrawer.util.DrawerUIUtils;
 import com.pierrejacquier.olim.data.User;
 import com.pierrejacquier.olim.helpers.DbHelper;
-import com.pierrejacquier.olim.helpers.DriveSyncController;
-import com.pierrejacquier.olim.helpers.NewerDatabaseCallback;
-import com.google.android.gms.auth.api.Auth;
 
 public class Olim extends Application implements NewerDatabaseCallback {
     private User currentUser;
     private DriveSyncController googleSync;
+    private GoogleApiClient googleApiClient;
     private DbHelper database;
-    private boolean readContactsAllowed;
+    private boolean readContactsAllowed = true;
+
+    public GoogleApiClient getGoogleApiClient() {
+        return googleApiClient;
+    }
+
+    public void setGoogleApiClient(GoogleApiClient googleApiClient) {
+        this.googleApiClient = googleApiClient;
+        this.googleApiClient.connect();
+    }
 
     public DriveSyncController getGoogleSync() {
         return googleSync;
     }
 
     public void setGoogleSync(Context context, boolean googleAuthorized) {
-        this.googleSync = DriveSyncController
-                .get(context, this.database, this, this, googleAuthorized)
-                .setDebug(true);
+        this.googleSync = DriveSyncController.get(context, this.database, this);
+    }
+
+    public void setGoogleSync(DriveSyncController googleSync) {
+        this.googleSync = googleSync;
     }
 
     public boolean isReadContactsAllowed() {
@@ -60,10 +72,11 @@ public class Olim extends Application implements NewerDatabaseCallback {
 
     public void wipeData() {
         setCurrentUser(null);
-        Plus.AccountApi.clearDefaultAccount(getGoogleSync().getGoogleApiClient());
-        getGoogleSync().getGoogleApiClient().disconnect();
+        Plus.AccountApi.clearDefaultAccount(getGoogleApiClient());
+        getGoogleApiClient().disconnect();
         this.googleSync = null;
         this.database.clearDatabase();
+        getGoogleApiClient().connect();
     }
 
     @Override
