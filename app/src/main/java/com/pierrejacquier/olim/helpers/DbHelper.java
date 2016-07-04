@@ -60,10 +60,7 @@ public class DbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int i, int i1) {
-        db.execSQL("DROP TABLE IF EXISTS " + TAGS_TABLE);
-        db.execSQL("DROP TABLE IF EXISTS " + TASKS_TABLE);
-
-        onCreate(db);
+        
     }
 
     public void insertTask(Task task) {

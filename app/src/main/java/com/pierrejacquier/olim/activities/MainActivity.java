@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -32,9 +33,14 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.github.athingunique.ddbs.DriveSyncController;
 import com.github.athingunique.ddbs.NewerDatabaseCallback;
+import com.github.athingunique.ddbs.drivelayer.DriveLayer;
+import com.github.athingunique.ddbs.drivelayer.FileResultsReadyCallback;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.drive.Drive;
+import com.google.android.gms.drive.DriveApi;
+import com.google.android.gms.drive.DriveFile;
+import com.google.android.gms.drive.Metadata;
 import com.google.android.gms.plus.Plus;
 import com.google.android.gms.plus.model.people.Person;
 import com.mikepenz.aboutlibraries.Libs;
@@ -61,6 +67,7 @@ import com.pierrejacquier.olim.fragments.LoadingFragment;
 import com.pierrejacquier.olim.fragments.TagsFragment;
 import com.pierrejacquier.olim.fragments.TasksFragment;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -207,17 +214,19 @@ public class MainActivity
 
     @Override
     public void driveNewer() {
-        Log.d("auie","Cloud newer");
         app.getGoogleSync().pullDbFromDrive();
+        updateUserTasks();
+        updateUserTags();
+        getTasksFragment().reRenderTasksTemp();
         getTasksFragment().endRefreshing();
+        toast("Pulled from Drive");
     }
 
     @Override
     public void localNewer() {
-        Log.d("auie","Cloud newer");
-        toast("Local newer");
         app.getGoogleSync().putDbInDrive();
         getTasksFragment().endRefreshing();
+        toast("Push to Drive");
     }
 
     @Override
@@ -402,7 +411,14 @@ public class MainActivity
 
     public void refreshData() {
         app.getGoogleSync().isDriveDbNewer();
-        getTasksFragment().endRefreshing();
+        Log.d("Tasks", updateUserTasks().toString());
+        new android.os.Handler().postDelayed(
+                new Runnable() {
+                    public void run() {
+                        Log.d("tag", updateUserTasks().toString());
+                    }
+                },
+                1000);
     }
 
     private void buildDrawer() {
@@ -410,7 +426,7 @@ public class MainActivity
             return;
         }
 
-        AccountHeader headerResult = null;
+        AccountHeader headerResult;
 
         if (app.isReadContactsAllowed()) {
             fetchGoogle();
@@ -511,6 +527,7 @@ public class MainActivity
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Log.d("earraui", connectionResult.toString());
         if (connectionResult.hasResolution()) {
             try {
                 connectionResult.startResolutionForResult(this, SIGNIN_RESOLUTION);
